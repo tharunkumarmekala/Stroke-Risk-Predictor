@@ -3,4 +3,5 @@ pandas
 numpy
 scikit-learn
 xgboost
-joblib # (Though often included with scikit-learn, good to be explicit)
+joblib
+gunicorn # <--- Add this!
