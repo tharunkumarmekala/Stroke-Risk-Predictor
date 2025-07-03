@@ -11,6 +11,7 @@
             --primary-blue-dark: #2980b9;
             --accent-green: #2ecc71;
             --accent-red: #e74c3c;
+            --accent-yellow: #f39c12; /* Added for Moderate Risk */
             --text-dark: #333;
             --text-medium: #555;
             --text-light: #777;
@@ -21,6 +22,12 @@
             --shadow-medium: rgba(0, 0, 0, 0.08);
             --info-bg: #e0f2ff;
             --info-border: #cce5ff;
+            --low-risk-bg: #e6ffe6; /* Light green */
+            --low-risk-border: #b3ffb3;
+            --moderate-risk-bg: #fffbe6; /* Light yellow */
+            --moderate-risk-border: #ffe0b3;
+            --high-risk-bg: #ffe6e6; /* Light red */
+            --high-risk-border: #ffb3b3;
         }
 
         body {
@@ -226,29 +233,95 @@
         #predictionResult {
             margin-top: 40px;
             padding: 25px;
-            border: 1px solid var(--info-border);
-            background-color: var(--info-bg);
             border-radius: 8px;
-            text-align: center;
-            font-size: 1.3em;
-            font-weight: 600;
+            text-align: left; /* Changed to left align for detailed output */
+            font-size: 1.1em;
             display: none;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             color: var(--text-dark);
+            transition: all 0.3s ease; /* Smooth transition for background changes */
         }
         #predictionResult p {
             margin: 8px 0;
         }
-        .result-high-risk {
-            color: var(--accent-red);
-            font-weight: bold;
-            font-size: 1.4em;
+
+        /* Specific risk level styling for result box */
+        #predictionResult.low-risk-bg {
+            background-color: var(--low-risk-bg);
+            border: 1px solid var(--low-risk-border);
         }
-        .result-low-risk {
-            color: var(--accent-green);
-            font-weight: bold;
-            font-size: 1.4em;
+        #predictionResult.moderate-risk-bg {
+            background-color: var(--moderate-risk-bg);
+            border: 1px solid var(--moderate-risk-border);
         }
+        #predictionResult.high-risk-bg {
+            background-color: var(--high-risk-bg);
+            border: 1px solid var(--high-risk-border);
+        }
+
+        .result-main-header {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary-blue);
+        }
+        .result-percentage {
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+        .result-level {
+            text-align: center;
+            font-size: 1.6em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .result-level.low { color: var(--accent-green); }
+        .result-level.moderate { color: var(--accent-yellow); }
+        .result-level.high { color: var(--accent-red); }
+
+        .result-message-text {
+            text-align: center;
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            color: var(--text-medium);
+        }
+
+        .result-section h3 {
+            color: var(--primary-blue-dark);
+            font-size: 1.2em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .result-section ul {
+            list-style: none; /* Remove default bullets */
+            padding: 0;
+            margin: 0;
+        }
+        .result-section li {
+            margin-bottom: 5px;
+            padding-left: 20px; /* Space for custom bullet */
+            position: relative;
+        }
+        .result-section li::before {
+            content: '•'; /* Custom bullet point */
+            color: var(--primary-blue);
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+            position: absolute;
+        }
+        .result-section li.contributor::before { content: '🔸'; color: var(--accent-yellow); }
+        .result-section li.clinical::before { content: '🩺'; color: #6c757d; }
+        .result-section li.lifestyle::before { content: '🌿'; color: var(--accent-green); }
+        .result-section li.food::before { content: '🍎'; color: #e74c3c; }
+
 
         /* Loading Indicator Styles */
         #loadingIndicator {
@@ -326,7 +399,6 @@
                         <label for="gender_male">Male</label>
                         <input type="radio" id="gender_female" name="gender" value="Female">
                         <label for="gender_female">Female</label>
-                        <!-- Removed 'Other' gender option as model was not trained on it -->
                     </div>
                 </div>
                 <div class="form-group">
@@ -448,47 +520,36 @@
         const ageSlider = document.getElementById('age');
         const ageValueSpan = document.getElementById('ageValue');
 
-        // Initialize age value display
-        ageValueSpan.textContent = ageSlider.value;
+        ageValueSpan.textContent = ageSlider.value; // Set initial value
         ageSlider.addEventListener('input', () => {
             ageValueSpan.textContent = ageSlider.value;
         });
 
-        // Function to handle dynamic form adjustments
         function handleWorkTypeChange() {
             const selectedWorkType = workTypeSelect.value;
-
             if (selectedWorkType === 'children') {
-                everMarriedResidenceRow.style.display = 'none'; // Hide the entire row
-                marriedNoRadio.checked = true; // Programmatically select "No" for Ever Married
-                // Add an age constraint message
+                everMarriedResidenceRow.style.display = 'none';
+                marriedNoRadio.checked = true;
                 ageConstraintMessage.textContent = 'Typically for ages <= 18 years.';
                 ageConstraintMessage.style.display = 'block';
             } else {
-                everMarriedResidenceRow.style.display = 'flex'; // Show the entire row
-                // Clear age constraint message
+                everMarriedResidenceRow.style.display = 'flex';
                 ageConstraintMessage.textContent = '';
                 ageConstraintMessage.style.display = 'none';
             }
         }
 
-        // Add event listener for work type change
         workTypeSelect.addEventListener('change', handleWorkTypeChange);
-
-        // Run on page load to set initial state based on default selection (if any)
         document.addEventListener('DOMContentLoaded', handleWorkTypeChange);
 
         form.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Prevent default form submission (page reload)
+            event.preventDefault();
 
-            // Clear previous results and show loading indicator
             predictionResultDiv.style.display = 'none';
             predictionResultDiv.innerHTML = '';
-            loadingIndicator.style.display = 'flex';
+            loadingIndicator.style.display = 'flex'; // Show loading indicator
 
             const formData = new FormData(form);
-
-            // If Ever Married was hidden due to 'children' work_type, ensure 'No' is submitted
             if (workTypeSelect.value === 'children') {
                  formData.set('ever_married', 'No');
             }
@@ -499,29 +560,94 @@
                     body: formData
                 });
 
-                loadingIndicator.style.display = 'none';
+                loadingIndicator.style.display = 'none'; // Hide loading indicator once response is received
 
                 if (!response.ok) {
                     const errorData = await response.json();
                     const errorMessage = errorData.message || 'An unexpected error occurred on the server.';
                     predictionResultDiv.innerHTML = `<p class="result-high-risk">Prediction Error: ${errorMessage}</p>`;
+                    predictionResultDiv.classList.add('high-risk-bg'); // Style error as high-risk background
                     predictionResultDiv.style.display = 'block';
                     return;
                 }
 
                 const data = await response.json();
 
-                if (data.result) {
-                    let className = data.result.includes('High') ? 'result-high-risk' : 'result-low-risk';
-                    predictionResultDiv.innerHTML = `
-                        <p class="${className}">${data.result}</p>
-                        <p>Confidence: ${data.probability}</p>
-                    `;
-                    predictionResultDiv.style.display = 'block';
-                } else if (data.error) {
-                    predictionResultDiv.innerHTML = `<p class="result-high-risk">Error: ${data.error}</p>`;
-                    predictionResultDiv.style.display = 'block';
+                // Clear previous risk background class
+                predictionResultDiv.classList.remove('low-risk-bg', 'moderate-risk-bg', 'high-risk-bg');
+
+                // Determine risk level class for styling the background
+                let riskClass = '';
+                if (data.risk_level.includes('Low')) {
+                    riskClass = 'low-risk-bg';
+                } else if (data.risk_level.includes('Moderate')) {
+                    riskClass = 'moderate-risk-bg';
+                } else {
+                    riskClass = 'high-risk-bg';
                 }
+                predictionResultDiv.classList.add(riskClass);
+
+
+                let riskLevelColorClass = '';
+                if (data.risk_level.includes('Low')) riskLevelColorClass = 'low';
+                else if (data.risk_level.includes('Moderate')) riskLevelColorClass = 'moderate';
+                else riskLevelColorClass = 'high';
+
+
+                // Build the detailed output HTML
+                let outputHtml = `
+                    <div class="result-main-header">Stroke Risk Assessment</div>
+                    <p class="result-percentage">${data.risk_percentage}</p>
+                    <p class="result-level ${riskLevelColorClass}">${data.risk_level}</p>
+                    <p class="result-message-text">🔔 ${data.risk_message}</p>
+                `;
+
+                if (data.risk_contributors && data.risk_contributors.length > 0) {
+                    outputHtml += `
+                        <div class="result-section">
+                            <h3>🔍 Main Risk Contributors:</h3>
+                            <ul>
+                                ${data.risk_contributors.map(contributor => `<li class="contributor">${contributor}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                if (data.clinical_actions && data.clinical_actions.length > 0) {
+                    outputHtml += `
+                        <div class="result-section">
+                            <h3>🏥 Clinical Actions:</h3>
+                            <ul>
+                                ${data.clinical_actions.map(action => `<li class="clinical">${action}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                if (data.lifestyle_recommendations && data.lifestyle_recommendations.length > 0) {
+                    outputHtml += `
+                        <div class="result-section">
+                            <h3>🌿 Lifestyle Recommendations:</h3>
+                            <ul>
+                                ${data.lifestyle_recommendations.map(rec => `<li class="lifestyle">${rec}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                if (data.food_recommendations && data.food_recommendations.length > 0) {
+                    outputHtml += `
+                        <div class="result-section">
+                            <h3>🍎 Recommended Foods for Your Gender (${data.gender_for_food}):</h3>
+                            <ul>
+                                ${data.food_recommendations.map(food => `<li class="food">${food}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                predictionResultDiv.innerHTML = outputHtml;
+                predictionResultDiv.style.display = 'block';
 
             } catch (error) {
                 loadingIndicator.style.display = 'none';
@@ -529,6 +655,7 @@
 
                 const networkErrorMessage = 'Could not connect to the server. Please check your internet connection and ensure the prediction service is running, then try again.';
                 predictionResultDiv.innerHTML = `<p class="result-high-risk">Connection Error: ${networkErrorMessage}</p>`;
+                predictionResultDiv.classList.add('high-risk-bg'); // Style network error with high-risk background
                 predictionResultDiv.style.display = 'block';
 
                 alert("Network not connected: " + networkErrorMessage);
