@@ -2,15 +2,22 @@ from flask import Flask, render_template, request, jsonify
 import joblib
 import pandas as pd
 import numpy as np
+import os # Import os module to handle paths
 
 app = Flask(__name__)
 
 # --- Load the Model and Preprocessing Objects ---
+# Determine the base directory of the application
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Define the path to the Models directory
+MODELS_DIR = os.path.join(BASE_DIR, 'Models')
+
 try:
-    model = joblib.load('Models/Stroke_model.pkl') # Updated path
-    scaler = joblib.load('Models/scaler.pkl')       # Updated path
-    label_encoders = joblib.load('Models/label_encoders.pkl') # Updated path
-    train_bmi_mean = joblib.load('Models/train_bmi_mean.pkl') # Updated path
+    model = joblib.load(os.path.join(MODELS_DIR, 'Stroke_model.pkl'))
+    scaler = joblib.load(os.path.join(MODELS_DIR, 'scaler.pkl'))
+    label_encoders = joblib.load(os.path.join(MODELS_DIR, 'label_encoders.pkl'))
+    train_bmi_mean = joblib.load(os.path.join(MODELS_DIR, 'train_bmi_mean.pkl'))
     print("Model and preprocessing objects loaded successfully!")
 except Exception as e:
     print(f"Error loading model or preprocessing objects: {e}")
@@ -22,9 +29,6 @@ except Exception as e:
 
 # Define the order of features the model expects (IMPORTANT!)
 # This should match the order of columns in X during model training
-# You can get this from X.columns after the initial data loading and ID drop.
-# Example (adjust based on your actual X.columns):
-# X = df.drop('stroke', axis=1)
 FEATURE_ORDER = [
     'gender', 'age', 'hypertension', 'heart_disease', 'ever_married',
     'work_type', 'Residence_type', 'avg_glucose_level', 'bmi', 'smoking_status'
@@ -36,132 +40,167 @@ def generate_result_content(stroke_percent, user_data):
     Generates the rich HTML content for the stroke risk assessment.
     """
     risk_level = ""
-    risk_icon = ""
+    risk_badge_class = "" # New: for styling the badge
+    risk_message = "" # New: for the specific risk message
+    
     recommendations = {
         "contributors": [],
         "clinical_actions": [],
         "lifestyle_recommendations": [],
         "recommended_foods": {
             "Male": [
-                "Boiled vegetables 🥕", "Steamed fish 🐟", "Green tea 🍵",
-                "Whole wheat 🥖", "Berries 🍓", "Oats 🥣", "Cucumber 🥒", "Celery 🥬"
+                {"name": "Lean chicken", "icon": "🍗"},
+                {"name": "Brown rice", "icon": "🍚"},
+                {"name": "Chia seeds", "icon": "🌱"},
+                {"name": "Broccoli", "icon": "🥦"},
+                {"name": "Olive oil", "icon": "🫒"},
+                {"name": "Turkey", "icon": "🦃"},
+                {"name": "Lentils", "icon": "🥣"},
+                {"name": "Tomatoes", "icon": "🍅"}
             ],
             "Female": [
-                "Leafy greens 🥬", "Salmon 🍣 (rich in Omega-3)", "Nuts & Seeds 🌰",
-                "Citrus fruits 🍊", "Beans & Lentils 🍲", "Yogurt 🥛 (low-fat)",
-                "Dark chocolate 🍫 (in moderation)", "Avocado 🥑"
+                {"name": "Leafy greens", "icon": "🥬"},
+                {"name": "Salmon", "icon": "🍣"},
+                {"name": "Nuts & Seeds", "icon": "🌰"},
+                {"name": "Citrus fruits", "icon": "🍊"},
+                {"name": "Beans & Lentils", "icon": "🍲"},
+                {"name": "Yogurt", "icon": "🥛"},
+                {"name": "Dark chocolate", "icon": "🍫"},
+                {"name": "Avocado", "icon": "🥑"}
             ]
         }
     }
 
-    # Determine Risk Level and Icon
+    # Determine Risk Level, Badge Class, and Message
     if stroke_percent < 10:
         risk_level = "Very Low Risk"
-        risk_icon = "🟢"
-        recommendations["clinical_actions"].append("Continue healthy lifestyle. Regular check-ups recommended.")
-        recommendations["lifestyle_recommendations"].append("Maintain balanced diet and regular exercise.")
+        risk_badge_class = "risk-green"
+        risk_message = "Very low risk detected. Continue your healthy habits!"
     elif 10 <= stroke_percent < 30:
-        risk_level = "Low Risk"
-        risk_icon = "🔵"
-        recommendations["clinical_actions"].append("Routine medical check-up within 6-12 months.")
-        recommendations["lifestyle_recommendations"].append("Focus on a balanced diet and consistent physical activity.")
-    elif 30 <= stroke_percent < 50:
         risk_level = "Moderate Risk"
-        risk_icon = "🟡"
-        recommendations["clinical_actions"].append("Consult your primary care physician for a comprehensive health assessment.")
-        recommendations["lifestyle_recommendations"].append("Adopt healthier eating habits and increase physical activity.")
-        recommendations["lifestyle_recommendations"].append("Monitor blood pressure and cholesterol levels regularly.")
-    elif 50 <= stroke_percent < 70:
+        risk_badge_class = "risk-yellow"
+        risk_message = "Moderate risk detected. Time to take action with lifestyle changes."
+    elif 30 <= stroke_percent < 50:
         risk_level = "High Risk"
-        risk_icon = "🟠 🟠"
-        recommendations["clinical_actions"].append("Urgent medical consultation - Schedule with a doctor immediately.")
-        recommendations["clinical_actions"].append("Consider blood pressure and cholesterol management strategies.")
-        recommendations["lifestyle_recommendations"].append("Implement significant lifestyle changes: quit smoking, dietary improvements, consistent exercise.")
-        recommendations["lifestyle_recommendations"].append("Stress management techniques (e.g., meditation, yoga) can be beneficial.")
-    else: # stroke_percent >= 70
+        risk_badge_class = "risk-orange"
+        risk_message = "High risk detected. Consult a healthcare professional."
+    elif 50 <= stroke_percent < 70:
         risk_level = "Very High Risk"
-        risk_icon = "🔴 🔴"
-        recommendations["clinical_actions"].append("🚨 High risk detected! Immediate medical consultation strongly recommended. Discuss preventative medication if appropriate.")
-        recommendations["clinical_actions"].append("Regular monitoring of vital signs (BP, glucose) is critical.")
-        recommendations["clinical_actions"].append("Consider specialist referral (e.g., cardiologist, neurologist).")
-        recommendations["lifestyle_recommendations"].append("Aggressive lifestyle changes: strict adherence to dietary guidelines, physician-approved exercise program.")
-        recommendations["lifestyle_recommendations"].append("Comprehensive stress reduction plan.")
+        risk_badge_class = "risk-red"
+        risk_message = "🚨 Very High risk detected! Immediate medical consultation strongly recommended."
+    else: # stroke_percent >= 70
+        risk_level = "Extreme Risk"
+        risk_badge_class = "risk-red-dark"
+        risk_message = "🚨 Extreme risk detected! Urgent medical intervention advised."
 
-    # Main Risk Contributors
+    # Main Risk Contributors (Adjusted based on common factors and example)
     if user_data['age'] >= 60:
-        recommendations["contributors"].append(f"Age {user_data['age']} - Risk significantly increases with age.")
+        recommendations["contributors"].append(f"Age {user_data['age']} - Risk significantly increases with age")
     elif user_data['age'] >= 40:
-        recommendations["contributors"].append(f"Age {user_data['age']} - Risk increases with age.")
+        recommendations["contributors"].append(f"Age {user_data['age']} - Risk increases with age")
+    
     if user_data['hypertension'] == 1:
-        recommendations["contributors"].append("Hypertension - High blood pressure is a major risk factor.")
+        recommendations["contributors"].append("Hypertension - High blood pressure is a major risk factor")
     if user_data['heart_disease'] == 1:
-        recommendations["contributors"].append("Heart Disease - Pre-existing heart conditions elevate risk.")
+        recommendations["contributors"].append("Heart Disease - Pre-existing heart conditions elevate risk")
+    
     if user_data['smoking_status_original'] == 'smokes':
-        recommendations["contributors"].append("Active Smoker - Smoking severely damages blood vessels and increases clot risk.")
+        recommendations["contributors"].append("Active Smoker - Smoking severely damages blood vessels and increases clot risk")
     elif user_data['smoking_status_original'] == 'formerly smoked':
-        recommendations["contributors"].append("Formerly Smoked - Past smoking history still contributes to risk.")
+        recommendations["contributors"].append("Formerly Smoked - Past smoking history still contributes to risk")
+    
+    # Placeholder for cholesterol (not an input, but in example result)
+    # If you add an input, replace this with dynamic logic.
+    recommendations["contributors"].append("Borderline high cholesterol (200-239 mg/dL)") 
 
     if user_data['bmi'] < 18.5:
-        recommendations["contributors"].append("Underweight (BMI <18.5) - May indicate poor nutrition or underlying health issues.")
+        recommendations["contributors"].append("Underweight (BMI <18.5) - May indicate poor nutrition or underlying health issues")
     elif user_data['bmi'] >= 25 and user_data['bmi'] < 30:
-        recommendations["contributors"].append("Overweight (BMI 25-29.9) - Increases strain on the cardiovascular system.")
+        recommendations["contributors"].append("Overweight (BMI 25-29.9) - Increases strain on the cardiovascular system")
     elif user_data['bmi'] >= 30:
-        recommendations["contributors"].append("Obese (BMI >30) - Significantly elevates risk for stroke and related conditions.")
+        recommendations["contributors"].append("Obese (BMI >30) - Significantly elevates risk for stroke and related conditions")
 
     if not recommendations["contributors"]: # If no specific contributors found, add a general one
         recommendations["contributors"].append("Based on your inputs, no major individual risk factors are identified, but general health maintenance is always advised.")
 
-    # Add general lifestyle recommendations if not enough specific ones
-    if not recommendations["lifestyle_recommendations"]:
-        recommendations["lifestyle_recommendations"].append("Maintain a healthy weight.")
-        recommendations["lifestyle_recommendations"].append("Regular physical activity (aim for 30 minutes most days).")
-        recommendations["lifestyle_recommendations"].append("Eat a balanced diet rich in fruits, vegetables, and whole grains.")
-        recommendations["lifestyle_recommendations"].append("Limit saturated and trans fats, cholesterol, and sodium.")
+    # Clinical Actions (Adapted to new example format)
+    recommendations["clinical_actions"].append("Annual checkup - Important for prevention")
+    recommendations["clinical_actions"].append("Lipid profile test - Check HDL, LDL, triglycerides")
+    if stroke_percent >= 30:
+        recommendations["clinical_actions"].append("Consult your primary care physician for a comprehensive health assessment")
+        recommendations["clinical_actions"].append("Consider blood pressure and cholesterol management strategies")
+    if stroke_percent >= 50:
+        recommendations["clinical_actions"].append("Urgent medical consultation - Schedule with a doctor immediately")
+        recommendations["clinical_actions"].append("Discuss preventative medication if appropriate.")
 
-    # Construct HTML output
+
+    # Lifestyle Recommendations (Adapted to new example format)
+    recommendations["lifestyle_recommendations"].append("Exercise regularly - 30 minutes most days")
+    recommendations["lifestyle_recommendations"].append("Balanced diet - Focus on whole foods")
+    recommendations["lifestyle_recommendations"].append("Maintain healthy weight - BMI 18.5-24.9 ideal")
+    recommendations["lifestyle_recommendations"].append("Healthy fats - More nuts, fish, olive oil")
+    if user_data['smoking_status_original'] in ['smokes', 'formerly smoked']:
+        recommendations["lifestyle_recommendations"].append("Quit smoking immediately - Most important change you can make")
+    if stroke_percent >= 30:
+        recommendations["lifestyle_recommendations"].append("Stress management - Try meditation or yoga")
+
+
+    # Construct HTML output using the new card structure
     html_output = f"""
-    <h2>Stroke Risk Assessment</h2>
-    <p class="stroke-percent">{stroke_percent:.1f}%</p>
-    <p class="risk-level">{risk_icon} {risk_level}</p>
-    <p class="call-to-action">
-        {recommendations['clinical_actions'][0] if recommendations['clinical_actions'] else 'Maintain a healthy lifestyle.'}
-    </p>
+    <div class="result-card result-main">
+        <h2 class="result-title">Stroke Risk Assessment</h2>
+        <p class="stroke-percent">{stroke_percent:.1f}%</p>
+        <div class="risk-badge {risk_badge_class}">
+            <span class="icon">{"⚠️" if stroke_percent >= 30 else "🟢"}</span> {risk_level}
+        </div>
+        <p class="risk-message">
+            <span class="icon">{"🔔" if stroke_percent >= 30 else "💡"}</span> {risk_message}
+        </p>
+    </div>
 
-    <h3>🔍 Main Risk Contributors:</h3>
-    <ul>
-        {''.join([f'<li>🔸 {c}</li>' for c in recommendations['contributors']])}
-    </ul>
+    <div class="result-card">
+        <h3><span class="icon">📌</span> Main Risk Contributors:</h3>
+        <ul>
+            {''.join([f'<li><span class="bullet-icon">🔹</span> {c}</li>' for c in recommendations['contributors']])}
+        </ul>
+    </div>
 
-    <h3>🏥 Clinical Actions:</h3>
-    <ul>
-        {''.join([f'<li>🩺 {c}</li>' for c in recommendations['clinical_actions']])}
-    </ul>
+    <div class="result-card">
+        <h3><span class="icon">🏥</span> Clinical Actions:</h3>
+        <ul>
+            {''.join([f'<li><span class="bullet-icon">🩺</span> {c}</li>' for c in recommendations['clinical_actions']])}
+        </ul>
+    </div>
 
-    <h3>🌿 Lifestyle Recommendations:</h3>
-    <ul>
-        {''.join([f'<li>🏋️ {c}</li>' for c in recommendations['lifestyle_recommendations']])}
-    </ul>
+    <div class="result-card">
+        <h3><span class="icon">🌿</span> Lifestyle Recommendations:</h3>
+        <ul>
+            {''.join([f'<li><span class="bullet-icon">💪</span> {c}</li>' for c in recommendations['lifestyle_recommendations']])}
+        </ul>
+    </div>
     """
     
     user_gender = user_data['gender_original']
     if user_gender in recommendations['recommended_foods']:
+        food_list_items = ''.join([f'<span class="food-tag">{food["name"]} {food["icon"]}</span>' for food in recommendations['recommended_foods'][user_gender]])
         html_output += f"""
-        <h3>🍎 Recommended Foods for Your Gender ({user_gender}):</h3>
-        <ul>
-            {''.join([f'<li>{food}</li>' for food in recommendations['recommended_foods'][user_gender]])}
-        </ul>
+        <div class="result-card">
+            <h3><span class="icon">🍎</span> Recommended Foods for Your Gender ({user_gender}):</h3>
+            <div class="food-tags-container">
+                {food_list_items}
+            </div>
+        </div>
         """
-    else:
-        html_output += """
-        <h3>🍎 Recommended Foods:</h3>
-        <p>A balanced diet rich in fruits, vegetables, and whole grains is recommended for everyone.</p>
-        <ul>
-            <li>Berries 🍓</li>
-            <li>Oats 🥣</li>
-            <li>Leafy greens 🥬</li>
-            <li>Fish 🐟</li>
-            <li>Nuts & Seeds 🌰</li>
-        </ul>
+    else: # Fallback if gender is 'Other' or not recognized
+        food_list_items = ''.join([f'<span class="food-tag">{food["name"]} {food["icon"]}</span>' for food in recommendations['recommended_foods']['Male']]) # Default to Male foods
+        html_output += f"""
+        <div class="result-card">
+            <h3><span class="icon">🍎</span> Recommended Foods:</h3>
+            <p>A balanced diet rich in fruits, vegetables, and whole grains is recommended for everyone.</p>
+            <div class="food-tags-container">
+                {food_list_items}
+            </div>
+        </div>
         """
 
     return html_output
@@ -196,14 +235,13 @@ def predict():
 
         # Preprocessing steps
         # 1. Handle 'Other' gender if it somehow sneaks in (though HTML should prevent it)
-        # Your original code drops 'Other'. For inference, we can map it or handle as error.
-        # For this setup, we'll assume the form restricts to 'Male'/'Female'.
         processed_gender = data['gender']
         if processed_gender == 'Other':
-            # Option 1: Map 'Other' to a default like 'Male' or 'Female' or the most frequent
-            # For simplicity, let's assume 'Male' if 'Other' is somehow passed
-            processed_gender = 'Male' # Or raise error if strict validation needed
-            print("Warning: 'Other' gender received, mapping to 'Male'.")
+            # Map 'Other' to a default like 'Male' or 'Female' or the most frequent from your training
+            # For simplicity, if 'Other' is passed, we'll try to map it to 'Male' or raise error.
+            # Best practice is to ensure form only sends valid options.
+            processed_gender = 'Male'
+            print("Warning: 'Other' gender received, mapping to 'Male'. Ensure form restricts valid options.")
         
         # 2. Impute BMI if missing
         if user_data['bmi'] is None:
@@ -213,17 +251,24 @@ def predict():
         # 3. Label Encoding for categorical features
         processed_input = {}
         for col, le in label_encoders.items():
-            if col == 'gender':
-                processed_input[col] = le.transform([processed_gender])[0]
-            elif col == 'ever_married':
-                processed_input[col] = le.transform([user_data['ever_married']])[0]
-            elif col == 'work_type':
-                processed_input[col] = le.transform([user_data['work_type']])[0]
-            elif col == 'Residence_type':
-                processed_input[col] = le.transform([user_data['Residence_type']])[0]
-            elif col == 'smoking_status':
-                processed_input[col] = le.transform([user_data['smoking_status_original']])[0]
-        
+            # Check if the value from user_data is in the encoder's known classes
+            value_to_encode = None
+            if col == 'gender': value_to_encode = processed_gender
+            elif col == 'ever_married': value_to_encode = user_data['ever_married']
+            elif col == 'work_type': value_to_encode = user_data['work_type']
+            elif col == 'Residence_type': value_to_encode = user_data['Residence_type']
+            elif col == 'smoking_status': value_to_encode = user_data['smoking_status_original']
+            
+            if value_to_encode and value_to_encode in le.classes_:
+                processed_input[col] = le.transform([value_to_encode])[0]
+            else:
+                # Handle unknown categories: either map to a default, or raise an error.
+                # For simplicity, if a category isn't known, this will raise a ValueError from transform
+                # which will be caught by the outer try-except.
+                # A more robust solution might map to the most frequent category or 0.
+                print(f"Warning: Unknown category '{value_to_encode}' for column '{col}'.")
+                processed_input[col] = le.transform([value_to_encode])[0] # Will likely fail here if unknown
+
         # Add numerical features
         processed_input['age'] = user_data['age']
         processed_input['hypertension'] = user_data['hypertension']
@@ -248,9 +293,10 @@ def predict():
         return jsonify({"success": True, "result_html": result_html})
 
     except ValueError as ve:
-        return jsonify({"error": f"Invalid input: {ve}. Please check your numerical values."}), 400
+        return jsonify({"error": f"Invalid input or unknown category: {ve}. Please check your inputs."}), 400
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
 
+# This block is only for local development/testing, Render/Vercel manage the server startup.
 if __name__ == '__main__':
-    app.run(debug=True) # Set debug=False in production
+    app.run(debug=True)
