@@ -7,10 +7,10 @@ app = Flask(__name__)
 
 # --- Load the Model and Preprocessing Objects ---
 try:
-    model = joblib.load('Stroke_model.pkl')
-    scaler = joblib.load('scaler.pkl')
-    label_encoders = joblib.load('label_encoders.pkl')
-    train_bmi_mean = joblib.load('train_bmi_mean.pkl')
+    model = joblib.load('Models/Stroke_model.pkl') # Updated path
+    scaler = joblib.load('Models/scaler.pkl')       # Updated path
+    label_encoders = joblib.load('Models/label_encoders.pkl') # Updated path
+    train_bmi_mean = joblib.load('Models/train_bmi_mean.pkl') # Updated path
     print("Model and preprocessing objects loaded successfully!")
 except Exception as e:
     print(f"Error loading model or preprocessing objects: {e}")
