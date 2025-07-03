@@ -1,53 +1,16 @@
-# A Blueprint is a YAML file used by Render to define and deploy your services.
-# Learn more at https://render.com/docs/blueprint
-
-# The 'services' section defines the different components of your application.
 services:
-  - type: web # This specifies that we are deploying a web service.
-    name: stroke-predictor # A unique name for your service on Render.
-    env: python # The environment runtime for your service.
-    
-    # The 'buildCommand' specifies the commands to run during the build process.
-    # We install dependencies from requirements.txt.
+  - type: web
+    name: stroke-predictor
+    env: python
     buildCommand: "pip install -r requirements.txt"
-    
-    # The 'startCommand' specifies how to start your application after building.
-    # We use Gunicorn, a common WSGI HTTP server for Python web applications.
-    # Gunicorn expects your Flask app instance (named 'app' in app.py).
-    startCommand: "gunicorn app:app" # Format: <your_app_file_name>:<your_flask_app_instance_name>
-    
-    # 'envVars' allows you to set environment variables for your service.
-    # This is where you might put sensitive keys, but not needed for this project.
+    startCommand: "gunicorn app:app"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.12 # Specify a Python version. Use a version compatible with your libs. (e.g., 3.9.12, 3.10.0, 3.11.0)
+        value: 3.9.12 # Or your preferred compatible Python version
       - key: FLASK_APP
-        value: app.py # Tells Flask where your app lives (though Gunicorn handles this).
+        value: app.py
       - key: PORT
-        value: 10000 # Render expects your app to listen on the PORT environment variable.
-                     # Gunicorn will automatically bind to $PORT by default.
-
-    # 'autoDeploy' controls whether a new deploy is triggered on every push to your branch.
-    autoDeploy: true # Set to false if you want manual deployments.
-
-    # 'pullRequestPreviews' deploys a preview for every pull request opened.
-    pullRequestPreviewsEnabled: false # Often disabled for simpler projects.
-
-    # 'healthCheckPath' is used by Render to check if your service is alive.
-    # For a simple Flask app, you might expose a /health endpoint, or just / for basic check.
-    # If your app doesn't have a /health endpoint, consider setting up one or removing this.
-    # For now, let's assume your '/' endpoint is sufficient for a basic check.
+        value: 10000
+    autoDeploy: true
+    pullRequestPreviewsEnabled: false
     healthCheckPath: /
-
-    # 'disk' allows you to define persistent storage.
-    # Not needed for this stateless prediction app, as models are loaded into memory.
-    # disk:
-    #   name: mydata
-    #   path: /var/data
-    #   sizeGB: 1
-
-    # 'scaling' determines the minimum and maximum instances for your service.
-    # Default is usually fine for initial deployment.
-    # scaling:
-    #   minInstances: 1
-    #   maxInstances: 1
