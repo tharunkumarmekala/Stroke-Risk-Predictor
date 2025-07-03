@@ -1,787 +1,367 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stroke Risk Assessment</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background: #f5f7fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-    }
-    .form-container {
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 600px;
-    }
-    h2 {
-      text-align: center;
-      color: #2c3e50;
-      margin-bottom: 1.5rem;
-    }
-    .form-group {
-      margin-bottom: 1.2rem;
-    }
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: #34495e;
-      font-weight: 500;
-    }
-    select {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 1rem;
-    }
-    select:focus {
-      outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    }
-    button {
-      width: 100%;
-      padding: 0.9rem;
-      background: #3498db;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      margin-top: 1rem;
-      transition: all 0.3s;
-    }
-    button:hover {
-      background: #2980b9;
-      transform: translateY(-2px);
-    }
-    .input-group {
-      display: flex;
-      gap: 10px;
-    }
-    .input-group .form-group {
-      flex: 1;
-    }
-    #loadingIndicator {
-      display: none;
-      text-align: center;
-      margin: 1.5rem 0;
-    }
-    .loading-spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
-    }
-    #result-container {
-      display: none;
-      margin-top: 1.5rem;
-      padding: 1.5rem;
-      border-radius: 8px;
-    }
-    .risk-very-low {
-      background-color: #e8f5e9;
-      border-left: 5px solid #43a047;
-    }
-    .risk-low {
-      background-color: #e3f2fd;
-      border-left: 5px solid #1e88e5;
-    }
-    .risk-slight {
-      background-color: #fff8e1;
-      border-left: 5px solid #ffb300;
-    }
-    .risk-moderate {
-      background-color: #ffe0b2;
-      border-left: 5px solid #fb8c00;
-    }
-    .risk-elevated {
-      background-color: #ffccbc;
-      border-left: 5px solid #f4511e;
-    }
-    .risk-high {
-      background-color: #ffcdd2;
-      border-left: 5px solid #e53935;
-    }
-    .risk-critical {
-      background-color: #fce4ec;
-      border-left: 5px solid #d81b60;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .risk-value {
-      font-size: 2rem;
-      font-weight: bold;
-      margin: 0.5rem 0;
-      text-align: center;
-    }
-    .risk-level {
-      text-align: center;
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
-    }
-    .risk-message {
-      text-align: center;
-      margin-bottom: 1.5rem;
-    }
-    .recommendations {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 8px;
-    }
-    .recommendations h4 {
-      margin-top: 0;
-      color: #2c3e50;
-    }
-    .recommendations ul {
-      padding-left: 1.2rem;
-    }
-    .recommendations li {
-      margin-bottom: 0.5rem;
-    }
-    .risk-factors {
-      margin-top: 1rem;
-    }
-    .risk-factors h4 {
-      margin-bottom: 0.5rem;
-    }
-    .factor {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-    .factor-emoji {
-      margin-right: 0.5rem;
-      font-size: 1.2rem;
-    }
-    .food-recommendations {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-    .food-item {
-      background: white;
-      padding: 0.5rem;
-      border-radius: 6px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .info-icon {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      background-color: #3498db;
-      color: white;
-      border-radius: 50%;
-      text-align: center;
-      line-height: 18px;
-      font-size: 12px;
-      margin-left: 5px;
-      cursor: help;
-      position: relative;
-    }
-    .info-tooltip {
-      display: none;
-      position: absolute;
-      background: #2c3e50;
-      color: white;
-      padding: 0.5rem;
-      border-radius: 6px;
-      width: 200px;
-      z-index: 100;
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-    .info-icon:hover .info-tooltip {
-      display: block;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stroke Risk Prediction</title>
+    <style>
+        /* CSS starts here */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top */
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            margin-bottom: 20px; /* Space from bottom */
+        }
+
+        h1, h2, h3 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 2.2em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            color: #34495e;
+        }
+
+        h3 {
+            font-size: 1.4em;
+            color: #4a698a;
+            border-bottom: 1px dashed #e9ecef;
+            padding-bottom: 8px;
+            margin-top: 25px;
+        }
+
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select {
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            width: calc(100% - 30px); /* Adjust for padding */
+            box-sizing: border-box;
+        }
+
+        .form-group input[type="radio"] {
+            margin-right: 5px;
+            margin-top: 10px;
+        }
+
+        .form-group small {
+            color: #777;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        button {
+            grid-column: 1 / -1; /* Span across both columns */
+            background-color: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .result-box {
+            background-color: #e9f7ef;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #d4edda;
+            margin-top: 30px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .result-box h2 {
+            color: #1a5e2f;
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .stroke-percent {
+            font-size: 3.5em;
+            font-weight: bold;
+            color: #007bff; /* A prominent blue */
+            text-align: center;
+            margin: 20px 0;
+            background-color: #e6f2ff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .risk-level {
+            font-size: 1.8em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Specific icon styling for clarity */
+        .risk-level .🔴 { color: #dc3545; }
+        .risk-level .🟠 { color: #fd7e14; }
+        .risk-level .🟡 { color: #ffc107; }
+        .risk-level .🔵 { color: #007bff; }
+        .risk-level .🟢 { color: #28a745; }
+
+
+        .call-to-action {
+            font-style: italic;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        .result-box ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .result-box ul li {
+            background-color: #f7f9fb;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-left: 4px solid #a7d9b5; /* Light green border */
+            border-radius: 6px;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+        }
+
+        .result-box ul li:before {
+            content: ""; /* No default bullet */
+        }
+
+        .result-box.loading {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+            color: #856404;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .result-box.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            form {
+                grid-template-columns: 1fr; /* Stack columns on smaller screens */
+            }
+
+            .container {
+                padding: 20px 25px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .stroke-percent {
+                font-size: 2.8em;
+            }
+        }
+        /* CSS ends here */
+    </style>
 </head>
 <body>
-  <div class="form-container">
-    <h2>Stroke Risk Assessment</h2>
-    <form id="strokeForm" action="javascript:void(0);">
-      <!-- Form fields remain exactly the same as before -->
-      <div class="input-group">
-        <div class="form-group">
-          <label for="age">Age Group
-            <span class="info-icon">i
-              <span class="info-tooltip">Age is a major non-modifiable risk factor. Risk increases significantly after 55 and doubles every decade after 55.</span>
-            </span>
-          </label>
-          <select id="age" name="age" required>
-            <option value="">Select age group</option>
-            <option value="30">Under 40</option>
-            <option value="50">40-59</option>
-            <option value="65">60+</option>
-          </select>
+    <div class="container">
+        <h1>Stroke Risk Assessment</h1>
+        <p class="description">Enter your details to predict your stroke risk percentage.</p>
+
+        <form id="predictionForm">
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <!-- Note: 'Other' gender was dropped in your model prep, so don't include it here -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Age:</label>
+                <input type="number" id="age" name="age" min="0" max="120" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label>Hypertension:</label>
+                <input type="radio" id="hypertension_yes" name="hypertension" value="1" required>
+                <label for="hypertension_yes">Yes</label>
+                <input type="radio" id="hypertension_no" name="hypertension" value="0" required>
+                <label for="hypertension_no">No</label>
+            </div>
+
+            <div class="form-group">
+                <label>Heart Disease:</label>
+                <input type="radio" id="heart_disease_yes" name="heart_disease" value="1" required>
+                <label for="heart_disease_yes">Yes</label>
+                <input type="radio" id="heart_disease_no" name="heart_disease" value="0" required>
+                <label for="heart_disease_no">No</label>
+            </div>
+
+            <div class="form-group">
+                <label>Ever Married:</label>
+                <input type="radio" id="married_yes" name="ever_married" value="Yes" required>
+                <label for="married_yes">Yes</label>
+                <input type="radio" id="married_no" name="ever_married" value="No" required>
+                <label for="married_no">No</label>
+            </div>
+
+            <div class="form-group">
+                <label for="work_type">Work Type:</label>
+                <select id="work_type" name="work_type" required>
+                    <option value="">Select Work Type</option>
+                    <option value="Private">Private</option>
+                    <option value="Self-employed">Self-employed</option>
+                    <option value="Govt_job">Govt Job</option>
+                    <option value="children">Children</option>
+                    <option value="Never_worked">Never Worked</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Residence Type:</label>
+                <input type="radio" id="residence_urban" name="Residence_type" value="Urban" required>
+                <label for="residence_urban">Urban</label>
+                <input type="radio" id="residence_rural" name="Residence_type" value="Rural" required>
+                <label for="residence_rural">Rural</label>
+            </div>
+
+            <div class="form-group">
+                <label for="avg_glucose_level">Avg. Glucose Level:</label>
+                <input type="number" id="avg_glucose_level" name="avg_glucose_level" min="50" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="bmi">BMI (Body Mass Index):</label>
+                <input type="number" id="bmi" name="bmi" min="10" max="60" step="0.1" placeholder="Optional">
+                <small>Leave blank if unknown; will be imputed.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="smoking_status">Smoking Status:</label>
+                <select id="smoking_status" name="smoking_status" required>
+                    <option value="">Select Status</option>
+                    <option value="formerly smoked">Formerly Smoked</option>
+                    <option value="never smoked">Never Smoked</option>
+                    <option value="smokes">Smokes</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+
+            <button type="submit">Get Risk Assessment</button>
+        </form>
+
+        <div id="result-container" class="result-box">
+            <!-- Results will be displayed here -->
+            <p>Your stroke risk assessment will appear here after submission.</p>
         </div>
-        <div class="form-group">
-          <label for="sex">Sex
-            <span class="info-icon">i
-              <span class="info-tooltip">Men have higher stroke risk at younger ages, but women have higher lifetime risk and worse outcomes.</span>
-            </span>
-          </label>
-          <select id="sex" name="sex" required>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="bmi">BMI Category
-          <span class="info-icon">i
-            <span class="info-tooltip">Obesity (BMI ≥30) increases stroke risk by 64%. Each unit increase in BMI raises ischemic stroke risk by 4%.</span>
-            </span>
-          </label>
-        <select id="bmi" name="bmi" required>
-          <option value="">Select BMI category</option>
-          <option value="18">Underweight (<18.5)</option>
-          <option value="22">Normal (18.5-24.9)</option>
-          <option value="27">Overweight (25-29.9)</option>
-          <option value="32">Obese (≥30)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="cholesterol">Cholesterol Level
-          <span class="info-icon">i
-            <span class="info-tooltip">High cholesterol leads to atherosclerosis. Total cholesterol >200 mg/dL increases stroke risk by 25%.</span>
-          </span>
-        </label>
-        <select id="cholesterol" name="cholesterol" required>
-          <option value="">Select cholesterol level</option>
-          <option value="170">Normal (<200 mg/dL)</option>
-          <option value="220">Borderline High (200-239 mg/dL)</option>
-          <option value="250">High (≥240 mg/dL)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="hypertension">Blood Pressure Category
-          <span class="info-icon">i
-            <span class="info-tooltip">Hypertension is the #1 modifiable stroke risk factor. BP ≥140/90 doubles stroke risk compared to normal BP.</span>
-          </span>
-        </label>
-        <select id="hypertension" name="hypertension" required>
-          <option value="">Select blood pressure</option>
-          <option value="0">Normal (<120 mmHg)</option>
-          <option value="1">Elevated (120-159 mmHg)</option>
-          <option value="2">High (≥160 mmHg)</option>
-        </select>
-      </div>
-
-      <div class="input-group">
-        <div class="form-group">
-          <label for="atrial-fibrillation">Atrial Fibrillation
-            <span class="info-icon">i
-              <span class="info-tooltip">AFib increases stroke risk 5-fold by causing blood clots in the heart that can travel to the brain.</span>
-            </span>
-          </label>
-          <select id="atrial-fibrillation" name="atrial-fibrillation" required>
-            <option value="0">No</option>
-            <option value="1">Yes</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="diabetes">Diabetes
-            <span class="info-icon">i
-              <span class="info-tooltip">Diabetes doubles stroke risk and makes outcomes worse. High blood sugar damages blood vessels over time.</span>
-            </span>
-          </label>
-          <select id="diabetes" name="diabetes" required>
-            <option value="0">No</option>
-            <option value="1">Yes</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="input-group">
-        <div class="form-group">
-          <label for="smoking">Smoking Status
-            <span class="info-icon">i
-              <span class="info-tooltip">Smoking doubles stroke risk by damaging blood vessels and increasing clot formation. Risk drops significantly within 2-5 years of quitting.</span>
-            </span>
-          </label>
-          <select id="smoking" name="smoking" required>
-            <option value="0">Never</option>
-            <option value="1">Current/Former</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="previous-stroke">Previous Stroke/TIA
-            <span class="info-icon">i
-              <span class="info-tooltip">Previous stroke increases risk of another stroke by 15-40% in the first year. TIAs indicate 10-20% stroke risk within 90 days.</span>
-            </span>
-          </label>
-          <select id="previous-stroke" name="previous-stroke" required>
-            <option value="0">No</option>
-            <option value="1">Yes</option>
-          </select>
-        </div>
-      </div>
-
-      <button type="submit">Calculate Stroke Risk</button>
-    </form>
-
-    <div id="loadingIndicator">
-      <div class="loading-spinner"></div>
-      <p>Analyzing your risk factors...</p>
     </div>
 
-    <div id="result-container">
-      <h3>Stroke Risk Assessment</h3>
-      <div id="risk-percentage" class="risk-value"></div>
-      <div id="risk-level" class="risk-level"></div>
-      <p id="risk-message" class="risk-message"></p>
-      
-      <div id="risk-factors" class="risk-factors">
-        <h4>🔍 Main Risk Contributors:</h4>
-        <div id="risk-reasons"></div>
-      </div>
-      
-      <div id="clinical-actions" class="recommendations">
-        <h4>🏥 Clinical Actions:</h4>
-        <ul id="actions-list"></ul>
-      </div>
-      
-      <div id="lifestyle-recommendations" class="recommendations">
-        <h4>🌿 Lifestyle Recommendations:</h4>
-        <ul id="lifestyle-list"></ul>
-      </div>
-      
-      <div id="diet-recommendations" class="recommendations">
-        <h4>🍎 Recommended Foods for Your Gender (<span id="gender-display"></span>):</h4>
-        <div id="food-list" class="food-recommendations"></div>
-      </div>
-    </div>
-  </div>
+    <script>
+        /* JavaScript starts here */
+        document.getElementById('predictionForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('strokeForm');
-      const resultContainer = document.getElementById('result-container');
-      const loadingIndicator = document.getElementById('loadingIndicator');
+            const form = event.target;
+            const formData = new FormData(form);
 
-      form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        loadingIndicator.style.display = 'block';
-        resultContainer.style.display = 'none'; // Hide previous results
+            // Display loading message
+            const resultContainer = document.getElementById('result-container');
+            resultContainer.innerHTML = '<p>Analyzing data... Please wait...</p>';
+            resultContainer.classList.add('loading'); // Add loading style
 
-        try {
-          // Get all form values directly
-          const formData = {
-            age: parseFloat(document.getElementById('age').value),
-            sex: document.getElementById('sex').value,
-            bmi: parseFloat(document.getElementById('bmi').value),
-            cholesterol: parseFloat(document.getElementById('cholesterol').value),
-            hypertension: parseInt(document.getElementById('hypertension').value),
-            atrial_fibrillation: parseInt(document.getElementById('atrial-fibrillation').value),
-            diabetes: parseInt(document.getElementById('diabetes').value),
-            smoking: parseInt(document.getElementById('smoking').value),
-            previous_stroke: parseInt(document.getElementById('previous-stroke').value)
-          };
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
 
-          // Basic validation for required fields
-          for (const key in formData) {
-            // Check if value is empty string, NaN, or null (for numerical fields)
-            if (formData[key] === null || formData[key] === '' || (typeof formData[key] === 'number' && isNaN(formData[key]))) {
-              throw new Error(`Please select a value for ${key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}.`);
+                const data = await response.json();
+
+                if (data.success) {
+                    resultContainer.innerHTML = data.result_html;
+                    resultContainer.classList.remove('loading');
+                    resultContainer.classList.add('success'); // Add success style
+                } else {
+                    resultContainer.innerHTML = `<p class="error-message">Error: ${data.error}</p>`;
+                    resultContainer.classList.remove('loading', 'success');
+                    resultContainer.classList.add('error'); // Add error style
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultContainer.innerHTML = '<p class="error-message">An error occurred while connecting to the server.</p>';
+                resultContainer.classList.remove('loading', 'success');
+                resultContainer.classList.add('error'); // Add error style
             }
-          }
-
-          // 1. Calculate risk using medical algorithm (frontend JS)
-          const medicalRiskPercentage = calculateMedicalRisk(formData);
-          
-          // 2. Try to get ML model analysis (backend Flask)
-          let mlRiskPercentage = null;
-          try {
-            const mlResponse = await fetch('/predict', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(formData)
-            });
-            
-            if (mlResponse.ok) {
-              const mlData = await mlResponse.json();
-              if (mlData.status === 'success') {
-                mlRiskPercentage = mlData.risk_percentage;
-              } else {
-                console.warn('ML model returned error:', mlData.message || mlData.error);
-              }
-            } else {
-                const errorData = await mlResponse.json();
-                console.error('ML model HTTP error:', errorData.message || errorData.error);
-                // Propagate error if ML model explicitly failed on its end
-                throw new Error(errorData.message || errorData.error || 'ML model prediction failed.');
-            }
-          } catch (mlError) {
-            console.error('Network or ML model specific error:', mlError);
-            // Don't re-throw here, let the overall catch block handle network or
-            // use medical risk as fallback if ML failed for non-critical reasons.
-          }
-          
-          let finalRiskPercentage = medicalRiskPercentage;
-          if (mlRiskPercentage !== null) {
-            // 3. Combine if ML model provided a valid response
-            const difference = Math.abs(medicalRiskPercentage - mlRiskPercentage);
-            if (difference <= 30) { // If difference is within 30 percentage points
-              finalRiskPercentage = (0.6 * medicalRiskPercentage) + (0.4 * mlRiskPercentage);
-            } else {
-              // If there's a major discrepancy, perhaps lean more on ML or average if both are valid
-              // For simplicity, let's just average if there's a big difference but no outright error.
-              // Or you could prioritize ML if it's considered more accurate.
-              // For now, if difference > 30, we'll average.
-              finalRiskPercentage = (medicalRiskPercentage + mlRiskPercentage) / 2;
-              console.warn(`Large discrepancy between medical risk (${medicalRiskPercentage.toFixed(1)}%) and ML risk (${mlRiskPercentage.toFixed(1)}%). Averaging.`);
-            }
-          } else {
-              console.warn('ML model prediction was not available or failed. Using only medical risk assessment.');
-          }
-
-          const result = {
-            risk_percentage: finalRiskPercentage,
-            formData: formData
-          };
-
-          displayResults(result);
-          
-        } catch (error) {
-          console.error('Overall Error:', error);
-          showError(error.message || 'Failed to calculate risk. Please try again.');
-          // Also show alert for critical errors like network issues or validation failures
-          if (error.message.includes('connect to the server') || error.message.includes('Please fill in all fields')) {
-            alert("Error: " + error.message);
-          }
-        } finally {
-          loadingIndicator.style.display = 'none';
-        }
-      });
-
-      // Medical risk calculation (1-100% scale)
-      function calculateMedicalRisk(formData) {
-        let riskScore = 1; // Base score
-        
-        // Age factors (max +40%)
-        if (formData.age >= 60) riskScore += 40;
-        else if (formData.age >= 40) riskScore += 20;
-        
-        // Sex factors (max +5%)
-        if (formData.sex === 'male') riskScore += 5;
-        
-        // BMI factors (max +15%)
-        if (formData.bmi < 18.5) riskScore += 5;
-        else if (formData.bmi >= 30) riskScore += 15;
-        else if (formData.bmi >= 25) riskScore += 10;
-        
-        // Cholesterol factors (max +15%)
-        if (formData.cholesterol >= 240) riskScore += 15;
-        else if (formData.cholesterol >= 200) riskScore += 10;
-        
-        // Blood pressure factors (max +20%)
-        if (formData.hypertension === 2) riskScore += 20;
-        else if (formData.hypertension === 1) riskScore += 10;
-        
-        // Medical conditions (max +30%)
-        if (formData.atrial_fibrillation === 1) riskScore += 20;
-        if (formData.diabetes === 1) riskScore += 15;
-        if (formData.smoking === 1) riskScore += 10;
-        if (formData.previous_stroke === 1) riskScore += 30;
-        
-        // Convert to percentage (1-100%)
-        const percentage = Math.min(100, Math.max(1, riskScore));
-        
-        return percentage;
-      }
-
-      function displayResults(result) {
-        const riskPercentage = result.risk_percentage;
-        const formData = result.formData;
-        const sex = formData.sex;
-        
-        // Update UI
-        document.getElementById('risk-percentage').textContent = `${riskPercentage.toFixed(1)}%`;
-        
-        // Determine risk level and class
-        let riskLevel, riskClass, riskEmoji;
-        if (riskPercentage < 5) {
-          riskLevel = "Very Low Risk";
-          riskClass = "risk-very-low";
-          riskEmoji = "🟢";
-        } else if (riskPercentage < 10) {
-          riskLevel = "Low Risk";
-          riskClass = "risk-low";
-          riskEmoji = "🟢";
-        } else if (riskPercentage < 20) {
-          riskLevel = "Moderate Risk";
-          riskClass = "risk-moderate";
-          riskEmoji = "🟡";
-        } else if (riskPercentage < 30) {
-          riskLevel = "Elevated Risk";
-          riskClass = "risk-elevated";
-          riskEmoji = "🟠";
-        } else if (riskPercentage < 40) {
-          riskLevel = "High Risk";
-          riskClass = "risk-high";
-          riskEmoji = "🔴";
-        } else if (riskPercentage < 60) {
-          riskLevel = "Serious Risk";
-          riskClass = "risk-high"; // Can reuse high risk styling
-          riskEmoji = "🔴";
-        } else {
-          riskLevel = "Critical Risk";
-          riskClass = "risk-critical";
-          riskEmoji = "🚨";
-        }
-
-        document.getElementById('risk-level').textContent = `${riskEmoji} ${riskEmoji} ${riskLevel}`;
-        
-        // Set risk message
-        const riskMessages = {
-          "risk-very-low": "🌟 Excellent! Your stroke risk is very low. Keep maintaining your healthy habits!",
-          "risk-low": "👍 Good news! Your stroke risk is low. Continue your healthy lifestyle to keep it that way.",
-          "risk-moderate": "🔔 Moderate risk detected. Time to take action with lifestyle changes.",
-          "risk-elevated": "⚠️ Elevated risk! Please consider consulting a healthcare provider.",
-          "risk-high": "🚨 High risk detected! Medical consultation strongly recommended.",
-          "risk-critical": "🆘 Critical risk! Please consult a doctor immediately for evaluation."
-        };
-        document.getElementById('risk-message').textContent = riskMessages[riskClass];
-        
-        // Show contributing risk factors
-        const reasons = [];
-        // Only include factors that *contribute* to risk (i.e., not normal/low values)
-        if (formData.age >= 60) {
-          reasons.push("🔸 <strong>Age 60+</strong> - Stroke risk doubles every decade after age 55");
-        } else if (formData.age >= 40) {
-          reasons.push("🔸 <strong>Age 40-59</strong> - Risk increases with age");
-        }
-        
-        if (formData.bmi < 18.5) {
-          reasons.push("🔸 <strong>Underweight (BMI <18.5)</strong> - May indicate poor nutrition");
-        } else if (formData.bmi >= 30) {
-          reasons.push("🔸 <strong>Obese (BMI ≥30)</strong> - Increases stroke risk by 64%");
-        } else if (formData.bmi >= 25) {
-          reasons.push("🔸 <strong>Overweight (BMI 25-29.9)</strong> - Moderate increased risk");
-        }
-        
-        if (formData.cholesterol >= 240) {
-          reasons.push("🔸 <strong>High cholesterol (≥240 mg/dL)</strong> - Leads to artery blockage");
-        } else if (formData.cholesterol >= 200) {
-          reasons.push("🔸 <strong>Borderline high cholesterol (200-239 mg/dL)</strong>");
-        }
-        
-        if (formData.hypertension === 2) {
-          reasons.push("🔸 <strong>High blood pressure (≥160 mmHg)</strong> - #1 modifiable risk factor");
-        } else if (formData.hypertension === 1) {
-          reasons.push("🔸 <strong>Elevated blood pressure (120-159 mmHg)</strong>");
-        }
-        
-        if (formData.atrial_fibrillation === 1) {
-          reasons.push("🔸 <strong>Atrial fibrillation</strong> - Increases risk 5-fold");
-        }
-        
-        if (formData.diabetes === 1) {
-          reasons.push("🔸 <strong>Diabetes</strong> - Doubles stroke risk");
-        }
-        
-        if (formData.smoking === 1) {
-          reasons.push("🔸 <strong>Smoking (current/former)</strong> - Damages blood vessels");
-        }
-        
-        if (formData.previous_stroke === 1) {
-          reasons.push("🔸 <strong>Previous stroke/TIA</strong> - High risk of recurrence");
-        }
-        
-        const riskReasonsElement = document.getElementById('risk-reasons');
-        if (reasons.length > 0) {
-          riskReasonsElement.innerHTML = reasons.map(r => `<div class="factor"><span class="factor-emoji"></span>${r}</div>`).join('');
-        } else {
-          riskReasonsElement.innerHTML = '<div class="factor"><span class="factor-emoji">🔹</span> No significant specific risk factors identified.</div>';
-        }
-        
-        // Show clinical actions
-        const actionsList = document.getElementById('actions-list');
-        actionsList.innerHTML = '';
-        const clinicalActions = getClinicalActions(riskPercentage, formData);
-        clinicalActions.forEach(action => {
-          const li = document.createElement('li');
-          li.innerHTML = action;
-          actionsList.appendChild(li);
         });
-        
-        // Show lifestyle recommendations
-        const lifestyleList = document.getElementById('lifestyle-list');
-        lifestyleList.innerHTML = '';
-        const lifestyleRecs = getLifestyleRecommendations(riskPercentage, formData);
-        lifestyleRecs.forEach(rec => {
-          const li = document.createElement('li');
-          li.innerHTML = rec;
-          lifestyleList.appendChild(li);
-        });
-        
-        // Show food recommendations
-        const foodList = document.getElementById('food-list');
-        foodList.innerHTML = '';
-        document.getElementById('gender-display').textContent = sex === 'male' ? 'Male' : 'Female';
-        const foodRecs = getFoodRecommendations(riskPercentage, sex);
-        foodRecs.forEach(food => {
-          const div = document.createElement('div');
-          div.className = 'food-item';
-          div.textContent = food;
-          foodList.appendChild(div);
-        });
-        
-        // Apply risk class to container
-        resultContainer.className = riskClass; // Remove old classes and add new one
-        resultContainer.style.display = 'block';
-      }
-
-      function getClinicalActions(riskPercentage, formData) {
-        const actions = [];
-        
-        if (riskPercentage >= 30) {
-          actions.push("🩺 <strong>Urgent medical consultation</strong> - Schedule with a doctor immediately");
-          actions.push("💊 <strong>Medication review</strong> - May need blood thinners or BP medications");
-        } else if (riskPercentage >= 20) {
-          actions.push("🩺 <strong>Doctor consultation</strong> - Recommended within next month");
-          actions.push("📝 <strong>Regular BP monitoring</strong> - Check at least weekly");
-        } else if (riskPercentage >= 10) {
-          actions.push("🩺 <strong>Annual checkup</strong> - Important for prevention");
-        }
-        
-        if (formData.hypertension >= 1) {
-          actions.push("❤️ <strong>Blood pressure management</strong> - Target <120/80 mmHg");
-        }
-        
-        if (formData.cholesterol >= 200) {
-          actions.push("🧪 <strong>Lipid profile test</strong> - Check HDL, LDL, triglycerides");
-        }
-        
-        if (formData.atrial_fibrillation === 1) {
-          actions.push("❤️ <strong>Cardiology consult</strong> - For possible anticoagulation");
-        }
-        
-        if (formData.diabetes === 1) {
-          actions.push("🩸 <strong>HbA1c monitoring</strong> - Target <7% for diabetics");
-        }
-        
-        if (actions.length === 0) {
-          actions.push("👍 <strong>No specific clinical actions needed</strong> - Maintain regular checkups");
-        }
-        
-        return actions;
-      }
-
-      function getLifestyleRecommendations(riskPercentage, formData) {
-        const recs = [];
-        
-        // General recommendations based on risk level
-        if (riskPercentage >= 30) {
-          recs.push("🚭 <strong>Quit smoking immediately</strong> - Most important change you can make");
-          recs.push("🏋️ <strong>Start supervised exercise</strong> - Begin with 30 min walking daily");
-          recs.push("🧘 <strong>Stress management</strong> - Try meditation or yoga");
-        } else if (riskPercentage >= 20) {
-          recs.push("🚭 <strong>Stop all tobacco use</strong> - Seek help if needed");
-          recs.push("🏃 <strong>Exercise 150+ min/week</strong> - Mix cardio and strength");
-          recs.push("🧂 <strong>Reduce sodium intake</strong> - Aim for <1500mg/day");
-        } else {
-          recs.push("🚶 <strong>Exercise regularly</strong> - 30 minutes most days");
-          recs.push("🥗 <strong>Balanced diet</strong> - Focus on whole foods");
-          recs.push("⚖️ <strong>Maintain healthy weight</strong> - BMI 18.5-24.9 ideal");
-        }
-        
-        // Specific recommendations based on risk factors
-        if (formData.bmi >= 25) {
-          recs.push("⚖️ <strong>Weight loss</strong> - Even 5-10% reduction helps");
-        }
-        
-        if (formData.hypertension >= 1) {
-          recs.push("🧂 <strong>Low-sodium diet</strong> - Avoid processed foods");
-        }
-        
-        if (formData.cholesterol >= 200) {
-          recs.push("🥑 <strong>Healthy fats</strong> - More nuts, fish, olive oil");
-        }
-        
-        if (formData.smoking === 1) {
-          recs.push("🚭 <strong>Smoking cessation</strong> - Reduces risk by 50% in 1 year");
-        }
-        
-        if (formData.diabetes === 1) {
-          recs.push("🍞 <strong>Carb control</strong> - Focus on low glycemic index foods");
-        }
-        
-        return recs;
-      }
-
-      function getFoodRecommendations(riskPercentage, sex) {
-        // Determine risk category for food recommendations
-        let riskCategory;
-        if (riskPercentage < 10) riskCategory = "low";
-        else if (riskPercentage < 20) riskCategory = "moderate";
-        else if (riskPercentage < 30) riskCategory = "high";
-        else riskCategory = "critical";
-        
-        // Gender-specific food recommendations
-        const foods = {
-          "low": {
-            "male": ["Salmon 🐟", "Avocado 🥑", "Almonds 🌰", "Leafy greens 🥬", "Oatmeal 🥣", "Blueberries 🫐", "Eggs 🥚", "Greek yogurt 🥛"],
-            "female": ["Berries 🍓", "Greek yogurt 🥛", "Dark chocolate 🍫", "Walnuts 🌰", "Spinach 🥬", "Quinoa 🍚", "Chia seeds 🌱", "Sweet potatoes 🍠"]
-          },
-          "moderate": {
-            "male": ["Lean chicken 🍗", "Brown rice 🍚", "Chia seeds 🌱", "Broccoli 🥦", "Olive oil 🫒", "Turkey 🦃", "Lentils 🥣", "Tomatoes 🍅"],
-            "female": ["Quinoa 🍚", "Lentils 🥣", "Salmon 🐟", "Flaxseeds 🌱", "Carrots 🥕", "Beans 🫘", "Oranges 🍊", "Cauliflower 🥦"]
-          },
-          "high": {
-            "male": ["Tofu 🍢", "Beets 🍠", "Garlic 🧄", "Turmeric 🌿", "Dark chocolate 🍫", "Mushrooms 🍄", "Pumpkin seeds 🎃", "Green tea 🍵"],
-            "female": ["Sweet potatoes 🍠", "Soy milk 🥛", "Chia pudding 🍮", "Pumpkin seeds 🌰", "Tomatoes 🍅", "Kale 🥬", "Apples 🍎", "Miso soup 🍲"]
-          },
-          "critical": {
-            "male": ["Boiled vegetables 🥕", "Steamed fish 🐟", "Green tea 🍵", "Whole wheat 🥖", "Berries 🍓", "Oats 🥣", "Cucumber 🥒", "Celery 🥬"],
-            "female": ["Almond milk 🥛", "Cottage cheese 🧀", "Kale 🥬", "Apple cider vinegar 🍏", "Oats 🥣", "Pears 🍐", "Zucchini 🥒", "Pomegranate 🍑"]
-          }
-        };
-        
-        return foods[riskCategory][sex];
-      }
-
-      function showError(message) {
-        const resultContainer = document.getElementById('result-container');
-        resultContainer.className = 'risk-high'; // Red background for error
-        resultContainer.style.display = 'block';
-        
-        document.getElementById('risk-percentage').textContent = 'Error';
-        document.getElementById('risk-level').textContent = '';
-        document.getElementById('risk-message').textContent = message;
-        
-        // Hide recommendation sections
-        document.getElementById('risk-factors').style.display = 'none';
-        document.getElementById('clinical-actions').style.display = 'none';
-        document.getElementById('lifestyle-recommendations').style.display = 'none';
-        document.getElementById('diet-recommendations').style.display = 'none';
-      }
-    });
-  </script>
+        /* JavaScript ends here */
+    </script>
 </body>
 </html>
