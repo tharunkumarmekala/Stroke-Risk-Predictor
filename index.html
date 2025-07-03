@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stroke Risk Prediction Form</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-blue-dark: #2980b9;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --text-dark: #333;
+            --text-medium: #555;
+            --text-light: #777;
+            --bg-light: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #ced4da;
+            --shadow-light: rgba(0, 0, 0, 0.1);
+            --shadow-medium: rgba(0, 0, 0, 0.08);
+            --info-bg: #e0f2ff;
+            --info-border: #cce5ff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px var(--shadow-light);
+            max-width: 760px;
+            margin: 40px auto;
+            border: 1px solid #eee;
+        }
+
+        h1 {
+            color: var(--primary-blue);
+            text-align: center;
+            margin-bottom: 35px;
+            font-weight: 600;
+            font-size: 2.2em;
+        }
+
+        /* Flexbox for two-column layout */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            flex: 1 1 calc(50% - 12.5px);
+            min-width: 320px;
+            margin-bottom: 5px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-medium);
+            font-size: 0.98em;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1em;
+            color: var(--text-dark);
+            background-color: #fdfdfd;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+
+        /* Custom styling for select dropdowns */
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23555' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 0.8em;
+            padding-right: 30px;
+        }
+
+        /* --- Radio Group as Buttons --- */
+        .radio-group-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        .radio-group-buttons label {
+            flex-grow: 1;
+            text-align: center;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #fdfdfd;
+            transition: all 0.2s ease;
+            font-weight: 400;
+            color: var(--text-medium);
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-size: 0.95em;
+        }
+
+        .radio-group-buttons input[type="radio"] {
+            display: none;
+        }
+
+        .radio-group-buttons input[type="radio"]:checked + label {
+            background-color: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+            box-shadow: 0 2px 7px rgba(52, 152, 219, 0.3);
+        }
+
+        .radio-group-buttons label:hover {
+            background-color: #eef7fc;
+            border-color: #b0d8f5;
+        }
+
+        .radio-group-buttons input[type="radio"]:checked + label:hover {
+            background-color: var(--primary-blue-dark);
+            border-color: var(--primary-blue-dark);
+        }
+
+        /* Age Slider Specific Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.9;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .label-with-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .label-with-value span {
+            font-weight: 600;
+            color: var(--primary-blue);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        button[type="submit"] {
+            background-color: var(--accent-green);
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 30px;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+        }
+        button[type="submit"]:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(46, 204, 113, 0.4);
+        }
+        button[type="submit"]:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(46, 204, 113, 0.2);
+        }
+
+        /* Result and Loading Area */
+        #predictionResult {
+            margin-top: 40px;
+            padding: 25px;
+            border: 1px solid var(--info-border);
+            background-color: var(--info-bg);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: 600;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            color: var(--text-dark);
+        }
+        #predictionResult p {
+            margin: 8px 0;
+        }
+        .result-high-risk {
+            color: var(--accent-red);
+            font-weight: bold;
+            font-size: 1.4em;
+        }
+        .result-low-risk {
+            color: var(--accent-green);
+            font-weight: bold;
+            font-size: 1.4em;
+        }
+
+        /* Loading Indicator Styles */
+        #loadingIndicator {
+            margin-top: 30px;
+            text-align: center;
+            color: var(--primary-blue);
+            font-size: 1.1em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-blue);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        .age-constraint-message {
+            color: var(--text-light);
+            font-size: 0.85em;
+            margin-top: 8px;
+            font-weight: 400;
+            display: none;
+        }
+        .input-hint {
+            font-size: 0.85em;
+            color: var(--text-light);
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 25px;
+            }
+            .form-group {
+                flex: 1 1 100%;
+                min-width: unset;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .radio-group-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Stroke Risk Prediction</h1>
+
+        <form id="predictionForm">
+            <!-- Row: Gender & Age -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Gender:</label>
+                    <div class="radio-group-buttons">
+                        <input type="radio" id="gender_male" name="gender" value="Male" required>
+                        <label for="gender_male">Male</label>
+                        <input type="radio" id="gender_female" name="gender" value="Female">
+                        <label for="gender_female">Female</label>
+                        <!-- Removed 'Other' gender option as model was not trained on it -->
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="age" class="label-with-value">Age: <span id="ageValue">60</span></label>
+                    <input type="range" id="age" name="age" min="0" max="120" step="1" value="60">
+                    <p id="ageConstraintMessage" class="age-constraint-message"></p>
+                </div>
+            </div>
+
+            <!-- Row: Hypertension & Heart Disease -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Hypertension:</label>
+                    <div class="radio-group-buttons">
+                        <input type="radio" id="hyper_yes" name="hypertension" value="Yes" required>
+                        <label for="hyper_yes">Yes</label>
+                        <input type="radio" id="hyper_no" name="hypertension" value="No">
+                        <label for="hyper_no">No</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Heart Disease:</label>
+                    <div class="radio-group-buttons">
+                        <input type="radio" id="heart_yes" name="heart_disease" value="Yes" required>
+                        <label for="heart_yes">Yes</label>
+                        <input type="radio" id="heart_no" name="heart_disease" value="No">
+                        <label for="heart_no">No</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row: Ever Married & Residence Type (Dynamic Visibility) -->
+            <div class="form-row" id="everMarriedResidenceRow">
+                <div class="form-group">
+                    <label>Ever Married:</label>
+                    <div class="radio-group-buttons">
+                        <input type="radio" id="married_yes" name="ever_married" value="Yes" required>
+                        <label for="married_yes">Yes</label>
+                        <input type="radio" id="married_no" name="ever_married" value="No">
+                        <label for="married_no">No</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Residence Type:</label>
+                    <div class="radio-group-buttons">
+                        <input type="radio" id="res_urban" name="Residence_type" value="Urban" required>
+                        <label for="res_urban">Urban</label>
+                        <input type="radio" id="res_rural" name="Residence_type" value="Rural">
+                        <label for="res_rural">Rural</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row: Work Type & Smoking Status -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="work_type">Work Type:</label>
+                    <select id="work_type" name="work_type" required>
+                        <option value="">--Please Select--</option>
+                        <option value="Private">Private</option>
+                        <option value="Self-employed">Self-employed</option>
+                        <option value="Govt_job">Government Job</option>
+                        <option value="children">Children</option>
+                        <option value="Never_worked">Never Worked</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="smoking_status">Smoking Status:</label>
+                    <select id="smoking_status" name="smoking_status" required>
+                        <option value="">--Please Select--</option>
+                        <option value="formerly smoked">Formerly Smoked</option>
+                        <option value="never smoked">Never Smoked</option>
+                        <option value="smokes">Smokes</option>
+                        <option value="Unknown">Unknown</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row: Avg Glucose Level & BMI -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="avg_glucose_level">Average Glucose Level:</label>
+                    <input type="number" id="avg_glucose_level" name="avg_glucose_level" step="0.01" min="50" max="300" required>
+                    <span class="input-hint">Typically between 60 and 200 mg/dL</span>
+                </div>
+                <div class="form-group">
+                    <label for="bmi">BMI (Body Mass Index):</label>
+                    <input type="number" id="bmi" name="bmi" step="0.01" min="10" max="100" required>
+                    <span class="input-hint">Healthy BMI is typically 18.5 - 24.9</span>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit">Predict Stroke Risk</button>
+
+        </form>
+
+        <!-- Area to display prediction result -->
+        <div id="loadingIndicator">
+            <div class="spinner"></div>
+            <span>Predicting... Please wait.</span>
+        </div>
+        <div id="predictionResult">
+            <!-- Prediction result will be injected here by JavaScript -->
+        </div>
+
+    </div>
+
+    <script>
+        const form = document.getElementById('predictionForm');
+        const predictionResultDiv = document.getElementById('predictionResult');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const workTypeSelect = document.getElementById('work_type');
+        const everMarriedResidenceRow = document.getElementById('everMarriedResidenceRow');
+        const marriedNoRadio = document.getElementById('married_no');
+        const ageConstraintMessage = document.getElementById('ageConstraintMessage');
+
+        // Age Slider Specifics
+        const ageSlider = document.getElementById('age');
+        const ageValueSpan = document.getElementById('ageValue');
+
+        // Initialize age value display
+        ageValueSpan.textContent = ageSlider.value;
+        ageSlider.addEventListener('input', () => {
+            ageValueSpan.textContent = ageSlider.value;
+        });
+
+        // Function to handle dynamic form adjustments
+        function handleWorkTypeChange() {
+            const selectedWorkType = workTypeSelect.value;
+
+            if (selectedWorkType === 'children') {
+                everMarriedResidenceRow.style.display = 'none'; // Hide the entire row
+                marriedNoRadio.checked = true; // Programmatically select "No" for Ever Married
+                // Add an age constraint message
+                ageConstraintMessage.textContent = 'Typically for ages <= 18 years.';
+                ageConstraintMessage.style.display = 'block';
+            } else {
+                everMarriedResidenceRow.style.display = 'flex'; // Show the entire row
+                // Clear age constraint message
+                ageConstraintMessage.textContent = '';
+                ageConstraintMessage.style.display = 'none';
+            }
+        }
+
+        // Add event listener for work type change
+        workTypeSelect.addEventListener('change', handleWorkTypeChange);
+
+        // Run on page load to set initial state based on default selection (if any)
+        document.addEventListener('DOMContentLoaded', handleWorkTypeChange);
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default form submission (page reload)
+
+            // Clear previous results and show loading indicator
+            predictionResultDiv.style.display = 'none';
+            predictionResultDiv.innerHTML = '';
+            loadingIndicator.style.display = 'flex';
+
+            const formData = new FormData(form);
+
+            // If Ever Married was hidden due to 'children' work_type, ensure 'No' is submitted
+            if (workTypeSelect.value === 'children') {
+                 formData.set('ever_married', 'No');
+            }
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                loadingIndicator.style.display = 'none';
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMessage = errorData.message || 'An unexpected error occurred on the server.';
+                    predictionResultDiv.innerHTML = `<p class="result-high-risk">Prediction Error: ${errorMessage}</p>`;
+                    predictionResultDiv.style.display = 'block';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.result) {
+                    let className = data.result.includes('High') ? 'result-high-risk' : 'result-low-risk';
+                    predictionResultDiv.innerHTML = `
+                        <p class="${className}">${data.result}</p>
+                        <p>Confidence: ${data.probability}</p>
+                    `;
+                    predictionResultDiv.style.display = 'block';
+                } else if (data.error) {
+                    predictionResultDiv.innerHTML = `<p class="result-high-risk">Error: ${data.error}</p>`;
+                    predictionResultDiv.style.display = 'block';
+                }
+
+            } catch (error) {
+                loadingIndicator.style.display = 'none';
+                console.error('Network or Fetch Error:', error);
+
+                const networkErrorMessage = 'Could not connect to the server. Please check your internet connection and ensure the prediction service is running, then try again.';
+                predictionResultDiv.innerHTML = `<p class="result-high-risk">Connection Error: ${networkErrorMessage}</p>`;
+                predictionResultDiv.style.display = 'block';
+
+                alert("Network not connected: " + networkErrorMessage);
+            }
+        });
+    </script>
+
+</body>
+</html>
