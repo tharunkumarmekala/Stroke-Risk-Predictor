@@ -1,22 +1,31 @@
 import joblib
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS # New import for CORS
 import numpy as np
-import shap # Import SHAP library
+import shap # Make sure shap is installed in your Vercel deployment via requirements.txt
+import os # New import for path manipulation
 
 app = Flask(__name__)
+CORS(app) # Enable CORS for all routes
 
-# --- Load your pre-trained model ---
+# --- Robustly load your pre-trained model ---
+# Use os.path.dirname(__file__) to get the directory of the current script (app.py)
+# and then join it with the model filename. This makes the path relative to the script.
+model_path = os.path.join(os.path.dirname(__file__), 'xgb_tuned_model_optimized_f1.pkl')
+
 model = None
+explainer = None # Initialize explainer outside try-except
 try:
-    model = joblib.load('xgb_tuned_model_optimized_f1.pkl')
-    # Initialize the SHAP TreeExplainer with the loaded model
-    explainer = shap.TreeExplainer(model)
+    model = joblib.load(model_path)
+    explainer = shap.TreeExplainer(model) # Initialize the SHAP TreeExplainer with the loaded model
     print("Model and SHAP explainer loaded successfully!")
 except FileNotFoundError as e:
-    print(f"Error loading model: {e}. Ensure 'xgb_tuned_model_optimized_f1.pkl' is in the same directory as app.py.")
+    print(f"Error loading model: {e}. Ensure '{model_path}' exists.")
+    # Critical error, the app won't function without the model
 except Exception as e:
     print(f"An unexpected error occurred while loading the model or explainer: {e}")
+    # Critical error, the app won't function without the model
 
 # --- HARDCODED PREPROCESSING PARAMETERS ---
 # !! IMPORTANT !! REPLACE THESE PLACEHOLDER VALUES WITH THE EXACT ONES FROM YOUR TRAINING SCRIPT OUTPUT
@@ -69,28 +78,27 @@ EXPECTED_FEATURES_ORDER_BEFORE_SCALING = [
 ]
 
 # --- Risk Level Thresholds (Adjust as needed based on your model's performance) ---
-# These are just examples. You might determine these from ROC curves, precision-recall, etc.
 RISK_THRESHOLDS = {
-    'low': 0.10,      # Probability <= 10%
-    'moderate': 0.30  # Probability > 10% and <= 30%
-    # Anything > 30% will be 'high'
+    'low': 0.10,
+    'moderate': 0.30
 }
 
 @app.route('/')
 def home():
+    # Vercel needs to know to serve index.html from the templates folder.
+    # The default Flask setup for templates usually works without path adjustments here.
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if model is None:
+    if model is None: # Check if model loaded successfully during app startup
         return jsonify({
-            'error': 'Server configuration error.',
-            'message': 'Prediction service is not fully initialized. Model file not loaded.'
+            'error': 'Server Configuration Error',
+            'message': 'Prediction service is not fully initialized. Model file could not be loaded on startup.'
         }), 500
 
     try:
         data = request.form.to_dict()
-        # Ensure all required keys are present.
         required_keys = [
             'gender', 'age', 'hypertension', 'heart_disease', 'ever_married',
             'work_type', 'Residence_type', 'avg_glucose_level', 'bmi', 'smoking_status'
@@ -104,16 +112,16 @@ def predict():
         # --- Preprocessing: Convert form data to model-compatible format ---
         processed_input_dict = {}
 
-        # Handle numerical features
+        # Numerical features
         processed_input_dict['age'] = float(data['age'])
         processed_input_dict['avg_glucose_level'] = float(data['avg_glucose_level'])
         processed_input_dict['bmi'] = float(data['bmi'])
 
-        # Handle binary features (Yes/No to 1/0)
+        # Binary features (Yes/No to 1/0)
         processed_input_dict['hypertension'] = 1 if data['hypertension'] == 'Yes' else 0
         processed_input_dict['heart_disease'] = 1 if data['heart_disease'] == 'Yes' else 0
 
-        # Handle LabelEncoded categorical features
+        # LabelEncoded categorical features
         categorical_cols_to_encode = ['gender', 'ever_married', 'work_type', 'Residence_type', 'smoking_status']
         for col in categorical_cols_to_encode:
             mapping = LABEL_ENCODER_MAPPINGS.get(col)
@@ -122,7 +130,7 @@ def predict():
 
             value = data[col]
             if value not in mapping:
-                return jsonify({
+                 return jsonify({
                     'error': f"Invalid input for {col}.",
                     'message': f"The selected value '{value}' for {col} is not recognized by the model. "
                                "Please select a valid option from the form."
@@ -132,12 +140,12 @@ def predict():
         # Create a Pandas DataFrame with the exact feature order
         input_df_before_scaling = pd.DataFrame([processed_input_dict], columns=EXPECTED_FEATURES_ORDER_BEFORE_SCALING)
 
+        print("Input DataFrame before scaling:\n", input_df_before_scaling)
+
         # Apply StandardScaler transformation using hardcoded mean and scale
-        # Note: scaler.transform expects a 2D array, so .values is used.
         input_scaled_array = (input_df_before_scaling.values - SCALER_MEAN) / SCALER_SCALE
 
         # Create a DataFrame for SHAP, ensuring column names are preserved after scaling
-        # SHAP explainer requires feature names to match the training data
         input_for_shap = pd.DataFrame(input_scaled_array, columns=EXPECTED_FEATURES_ORDER_BEFORE_SCALING)
 
         # --- Make prediction ---
@@ -162,79 +170,90 @@ def predict():
             risk_message = "High risk detected. Immediate medical consultation recommended."
 
         # --- Calculate SHAP values for risk contributors ---
-        # Get SHAP values for the single instance (class 1 for stroke)
-        shap_values_instance = explainer.shap_values(input_for_shap)[1][0] # Index [1] for positive class, [0] for single instance
-
-        # Create a Series of SHAP values with feature names
-        shap_series = pd.Series(shap_values_instance, index=input_for_shap.columns)
-
-        # Identify positive contributors (features that increase the likelihood of stroke)
-        # We look for SHAP values > 0.001 (a small threshold to filter noise)
-        positive_contributors = shap_series[shap_series > 0.001].sort_values(ascending=False)
-
         risk_contributors = []
-        if not positive_contributors.empty:
-            # Get the top N contributors (e.g., top 3)
-            for feature, shap_val in positive_contributors.head(3).items():
-                original_value = data[feature] # Get original input value from form data
-                if feature in INVERSE_LABEL_ENCODER_MAPPINGS:
-                    # If it was label encoded, get its original string representation
-                    encoded_value = processed_input_dict[feature]
-                    original_value = INVERSE_LABEL_ENCODER_MAPPINGS[feature].get(encoded_value, original_value)
-                
-                # Format for display, considering specific features
-                contributor_description = f"{feature.replace('_', ' ').title()}: {original_value}"
-                if feature == 'bmi':
-                    bmi_val = float(data['bmi'])
-                    if bmi_val < 18.5:
-                        contributor_description = f"Underweight (BMI <18.5) - May indicate poor nutrition"
-                    elif bmi_val >= 25.0 and bmi_val < 30.0:
-                        contributor_description = f"Overweight (BMI {bmi_val:.1f}) - Increased health risks"
-                    elif bmi_val >= 30.0:
-                        contributor_description = f"Obese (BMI {bmi_val:.1f}) - Significantly increased health risks"
+        if explainer: # Only proceed if explainer was loaded successfully
+            shap_values_instance = explainer.shap_values(input_for_shap)[1][0] # Index [1] for positive class, [0] for single instance
+            shap_series = pd.Series(shap_values_instance, index=input_for_shap.columns)
+            positive_contributors = shap_series[shap_series > 0.001].sort_values(ascending=False)
+
+            if not positive_contributors.empty:
+                for feature, shap_val in positive_contributors.head(3).items():
+                    original_value = data.get(feature, 'N/A') # Use .get() for safety
+                    if feature in INVERSE_LABEL_ENCODER_MAPPINGS:
+                        encoded_value = processed_input_dict.get(feature)
+                        original_value = INVERSE_LABEL_ENCODER_MAPPINGS[feature].get(encoded_value, original_value)
+
+                    contributor_description = ""
+                    # Specific descriptions based on feature and value
+                    if feature == 'bmi':
+                        bmi_val = float(data['bmi'])
+                        if bmi_val < 18.5:
+                            contributor_description = f"Underweight (BMI <18.5) - May indicate poor nutrition"
+                        elif bmi_val >= 25.0 and bmi_val < 30.0:
+                            contributor_description = f"Overweight (BMI {bmi_val:.1f}) - Increased health risks"
+                        elif bmi_val >= 30.0:
+                            contributor_description = f"Obese (BMI {bmi_val:.1f}) - Significantly increased health risks"
+                        else:
+                            contributor_description = f"BMI ({bmi_val:.1f})"
+                    elif feature == 'age':
+                        contributor_description = f"Age ({int(data['age'])} years) - Age is a natural risk factor"
+                    elif feature == 'avg_glucose_level':
+                        contributor_description = f"High Glucose Level ({float(data['avg_glucose_level']):.1f} mg/dL)" if float(data['avg_glucose_level']) > 125 else f"Glucose Level ({float(data['avg_glucose_level']):.1f} mg/dL)"
+                    elif feature == 'hypertension':
+                        contributor_description = f"Hypertension ({original_value}) - High blood pressure is a major risk factor"
+                    elif feature == 'heart_disease':
+                        contributor_description = f"Heart Disease ({original_value}) - Pre-existing heart conditions increase risk"
+                    elif feature == 'smoking_status':
+                        if original_value == 'smokes':
+                            contributor_description = f"Smoking ({original_value}) - Significantly increases stroke risk"
+                        elif original_value == 'formerly smoked':
+                            contributor_description = f"Formerly Smoked ({original_value}) - Past smoking habits can contribute"
+                        else:
+                            contributor_description = f"Smoking Status ({original_value})"
                     else:
-                        contributor_description = f"BMI ({bmi_val:.1f})"
-                elif feature == 'age':
-                    contributor_description = f"Age ({int(data['age'])} years) - Age is a natural risk factor"
-                elif feature == 'avg_glucose_level':
-                    contributor_description = f"High Glucose Level ({float(data['avg_glucose_level']):.1f} mg/dL)" if float(data['avg_glucose_level']) > 125 else f"Glucose Level ({float(data['avg_glucose_level']):.1f} mg/dL)"
+                        contributor_description = f"{feature.replace('_', ' ').title()}: {original_value}" # Default fallback
 
-
-                risk_contributors.append(contributor_description)
+                    risk_contributors.append(contributor_description)
+            else:
+                risk_contributors.append("No prominent specific risk contributors identified by the model for this profile.")
         else:
-            risk_contributors.append("No prominent specific risk contributors identified by the model for this profile.")
+            risk_contributors.append("Risk contributors could not be calculated (SHAP explainer not loaded).")
 
 
         # --- Clinical Actions & Lifestyle Recommendations ---
         clinical_actions = [
-            "Annual checkup - Important for prevention",
-            "Consult with a doctor about your risk factors" if prediction_proba > RISK_THRESHOLDS['low'] else None
+            "Annual checkup - Important for prevention"
         ]
+        if prediction_proba > RISK_THRESHOLDS['low']:
+            clinical_actions.append("Consult with a doctor about your risk factors and specific management plan.")
+        if prediction_proba > RISK_THRESHOLDS['moderate']:
+            clinical_actions.append("Consider immediate medical consultation for high-risk assessment.")
+
+
         lifestyle_recommendations = [
             "Exercise regularly - 30 minutes most days",
-            "Balanced diet - Focus on whole foods",
+            "Balanced diet - Focus on whole foods, fruits, and vegetables",
             "Maintain healthy weight - BMI 18.5-24.9 ideal",
-            "Manage stress effectively",
-            "Monitor blood pressure and glucose levels"
+            "Manage stress effectively through mindfulness or hobbies",
+            "Monitor blood pressure and glucose levels regularly",
+            "Limit alcohol intake",
+            "Quit smoking (if applicable) - seek support if needed"
         ]
-        # Filter out None values
-        clinical_actions = [action for action in clinical_actions if action is not None]
-
 
         # --- Food Recommendations by Gender ---
         food_recommendations = []
-        if data['gender'] == 'Male':
+        user_gender_for_food = data.get('gender', 'Unknown') # Default to Unknown if missing
+        if user_gender_for_food == 'Male':
             food_recommendations = [
                 "Lean chicken 🍗", "Brown rice 🍚", "Chia seeds 🌱", "Broccoli 🥦",
                 "Olive oil 🫒", "Turkey 🦃", "Lentils 🥣", "Tomatoes 🍅"
             ]
-        elif data['gender'] == 'Female':
+        elif user_gender_for_food == 'Female':
             food_recommendations = [
                 "Salmon 🍣", "Quinoa 🍚", "Spinach 🥬", "Berries 🍓",
                 "Avocado 🥑", "Greek yogurt 🍦", "Almonds 🌰", "Sweet potatoes 🍠"
             ]
-        # Add a default if 'Other' was somehow chosen, though we removed it from the form
-        else:
+        else: # Covers 'Other' (which we removed from HTML) or unexpected values
             food_recommendations = ["General healthy food choices like fruits, vegetables, and lean proteins."]
 
         # --- Construct the detailed JSON response ---
@@ -246,7 +265,7 @@ def predict():
             'clinical_actions': clinical_actions,
             'lifestyle_recommendations': lifestyle_recommendations,
             'food_recommendations': food_recommendations,
-            'gender_for_food': data['gender'] # Pass back gender for display
+            'gender_for_food': user_gender_for_food
         }
         return jsonify(response_data)
 
@@ -262,5 +281,20 @@ def predict():
             'message': f"An internal server error occurred: {str(e)}. Please try again later."
         }), 500
 
+# This block is for local development only and is ignored by Vercel
 if __name__ == '__main__':
+    # Make sure this is only called if running locally
+    # It attempts to load the model and explainer again, which is redundant if successful above,
+    # but provides clearer local startup feedback.
+    if model is None:
+        print("\n--- WARNING: Model not loaded during app initialization. Attempting local reload for debug. ---")
+        try:
+            model = joblib.load(model_path)
+            global explainer # Access the global explainer variable
+            explainer = shap.TreeExplainer(model)
+            print("Model and SHAP explainer successfully loaded for local debug.")
+        except Exception as e:
+            print(f"Local debug load failed: {e}")
+            print("Cannot run locally without the model. Exiting.")
+            exit()
     app.run(debug=True)
