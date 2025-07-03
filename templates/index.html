@@ -4,279 +4,456 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stroke Risk Prediction</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* CSS starts here */
+        /* General Styles */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            font-family: 'Inter', sans-serif; /* A modern font, if available */
+            background-color: #f7f9fc;
             color: #333;
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            padding: 30px 20px;
             display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Align to top */
+            flex-direction: column;
+            align-items: center;
             min-height: 100vh;
         }
 
         .container {
-            background-color: #fff;
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            max-width: 900px;
             width: 100%;
-            margin-bottom: 20px; /* Space from bottom */
-        }
-
-        h1, h2, h3 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
+            box-sizing: border-box;
         }
 
         h1 {
-            font-size: 2.2em;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 15px;
-        }
-
-        h2 {
-            font-size: 1.8em;
-            color: #34495e;
-        }
-
-        h3 {
-            font-size: 1.4em;
-            color: #4a698a;
-            border-bottom: 1px dashed #e9ecef;
-            padding-bottom: 8px;
-            margin-top: 25px;
-        }
-
-        .description {
+            font-size: 2.5em;
+            color: #2c3e50;
             text-align: center;
             margin-bottom: 30px;
-            font-size: 1.1em;
-            color: #555;
+            font-weight: 700;
         }
 
-        form {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        /* Form Styles */
+        .form-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
             margin-bottom: 40px;
         }
 
         .form-group {
+            flex: 1 1 calc(50% - 30px); /* Two columns, with gap */
+            min-width: 280px; /* Minimum width before wrapping */
             display: flex;
             flex-direction: column;
         }
 
         .form-group label {
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #34495e;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #4a5568;
+            font-size: 1.1em;
         }
 
-        .form-group input[type="text"],
-        .form-group input[type="number"],
-        .form-group select {
-            padding: 12px 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+        /* Input Fields */
+        input[type="text"],
+        input[type="number"],
+        select {
+            padding: 14px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             font-size: 1em;
-            width: calc(100% - 30px); /* Adjust for padding */
+            width: 100%;
             box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
 
-        .form-group input[type="radio"] {
-            margin-right: 5px;
-            margin-top: 10px;
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #63b3ed;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+            outline: none;
         }
 
-        .form-group small {
-            color: #777;
+        .input-description {
             font-size: 0.85em;
+            color: #718096;
             margin-top: 5px;
         }
 
-        button {
-            grid-column: 1 / -1; /* Span across both columns */
-            background-color: #28a745;
-            color: white;
-            padding: 15px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+        /* Button Group (Gender, Hypertension, etc.) */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; /* Allow wrapping for smaller screens */
             width: 100%;
         }
 
-        button:hover {
-            background-color: #218838;
-            transform: translateY(-2px);
+        .button-group .btn {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background-color: #f0f4f8;
+            color: #4a5568;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+            text-align: center;
+            min-width: 80px; /* Prevent buttons from becoming too small */
         }
 
-        .result-box {
-            background-color: #e9f7ef;
-            padding: 25px;
+        .button-group .btn.selected {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            border-color: #4CAF50;
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+        }
+
+        .button-group .btn:hover:not(.selected) {
+            background-color: #e2e8f0;
+            border-color: #cbd5e0;
+        }
+
+        /* Age Slider */
+        .age-slider-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .age-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: #f0f4f8;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .age-slider-container input[type="range"] {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #d1d8e0;
+            outline: none;
+            border-radius: 5px;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+
+        .age-slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .age-slider-container input[type="range"]::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .age-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4CAF50;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* Submit Button */
+        button[type="submit"] {
+            grid-column: 1 / -1;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 18px 30px;
+            border: none;
             border-radius: 12px;
-            border: 1px solid #d4edda;
-            margin-top: 30px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 100%;
+            box-shadow: 0 8px 15px rgba(76, 175, 80, 0.3);
         }
 
-        .result-box h2 {
-            color: #1a5e2f;
+        button[type="submit"]:hover {
+            background-color: #45a049;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Result Section */
+        #result-container {
+            margin-top: 30px;
+            padding: 0; /* Remove padding as cards have their own */
+            background-color: transparent; /* No background for the container */
+            border: none; /* No border for the container */
+            box-shadow: none; /* No shadow for the container */
+            display: grid;
+            gap: 25px;
+            grid-template-columns: 1fr; /* Default to single column */
+        }
+
+        .result-card {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 18px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+            border-top: 6px solid #4CAF50; /* Accent color */
+            transition: transform 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .result-card.result-summary {
+            text-align: center;
+            border-top-color: #007bff; /* Different accent for summary */
+        }
+
+        .result-card h2 {
             font-size: 2em;
             margin-bottom: 15px;
+            color: #007bff;
+        }
+
+        .result-card h3 {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: none;
+            padding-bottom: 0;
+            justify-content: center; /* Center header content */
+            font-weight: 600;
+        }
+
+        .result-card h3 .icon {
+            font-size: 1.2em;
+            margin-right: 10px;
+            color: #4CAF50;
         }
 
         .stroke-percent {
-            font-size: 3.5em;
-            font-weight: bold;
-            color: #007bff; /* A prominent blue */
-            text-align: center;
+            font-size: 4em;
+            font-weight: 800;
+            color: #007bff;
             margin: 20px 0;
-            background-color: #e6f2ff;
-            padding: 10px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            line-height: 1;
         }
 
         .risk-level {
             font-size: 1.8em;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
         }
-
-        /* Specific icon styling for clarity */
-        .risk-level .🔴 { color: #dc3545; }
-        .risk-level .🟠 { color: #fd7e14; }
-        .risk-level .🟡 { color: #ffc107; }
-        .risk-level .🔵 { color: #007bff; }
-        .risk-level .🟢 { color: #28a745; }
-
 
         .call-to-action {
             font-style: italic;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 30px;
             color: #555;
             font-size: 1.1em;
+            line-height: 1.4;
+            max-width: 80%; /* Limit width for better readability */
+            margin: 0 auto 20px auto;
         }
 
-        .result-box ul {
+        .result-card ul {
             list-style: none;
             padding: 0;
-            margin-bottom: 20px;
         }
 
-        .result-box ul li {
-            background-color: #f7f9fb;
-            padding: 10px 15px;
-            margin-bottom: 8px;
-            border-left: 4px solid #a7d9b5; /* Light green border */
-            border-radius: 6px;
-            font-size: 0.95em;
+        .result-card ul li {
+            background-color: #f8fcfb;
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-size: 1em;
+            color: #4a5568;
+            border: 1px solid #e0f2f7;
             display: flex;
             align-items: center;
+            gap: 10px;
         }
 
-        .result-box ul li:before {
-            content: ""; /* No default bullet */
+        /* Food Pills */
+        .food-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center; /* Center food pills */
         }
 
-        .result-box.loading {
-            background-color: #fff3cd;
-            border-color: #ffeeba;
-            color: #856404;
-            text-align: center;
+        .food-pill {
+            background-color: #e0f7fa; /* Light blue background */
+            color: #007bff; /* Blue text */
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            white-space: nowrap; /* Keep text on one line */
+            border: 1px solid #b3e5fc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Status Colors for Risk Level */
+        .risk-level .🔴 { color: #e74c3c; } /* Red for very high */
+        .risk-level .🟠 { color: #f39c12; } /* Orange for high */
+        .risk-level .🟡 { color: #f1c40f; } /* Yellow for moderate */
+        .risk-level .🔵 { color: #3498db; } /* Blue for low */
+        .risk-level .🟢 { color: #2ecc71; } /* Green for very low */
+
+
+        /* Loading and Error States */
+        #result-container.loading,
+        #result-container.error {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            font-size: 1.2em;
             font-weight: bold;
+            color: #856404;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: none; /* Override card shadow */
         }
 
-        .result-box.error {
+        #result-container.error {
+            color: #721c24;
             background-color: #f8d7da;
             border-color: #f5c6cb;
-            color: #721c24;
-            text-align: center;
-            font-weight: bold;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            form {
-                grid-template-columns: 1fr; /* Stack columns on smaller screens */
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            #result-container {
+                grid-template-columns: repeat(2, 1fr); /* Two columns for results */
             }
-
-            .container {
-                padding: 20px 25px;
+            .result-card.result-summary {
+                grid-column: span 2; /* Summary spans both columns */
             }
-
-            h1 {
-                font-size: 1.8em;
-            }
-
-            .stroke-percent {
-                font-size: 2.8em;
+            .form-group:nth-child(even) { /* Align second column inputs */
+                margin-left: 0;
             }
         }
-        /* CSS ends here */
+
+        @media (max-width: 767px) {
+            .form-group {
+                flex: 1 1 100%; /* Single column on small screens */
+            }
+            .age-slider-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .age-value {
+                width: 100%;
+                text-align: center;
+            }
+            .button-group .btn {
+                flex: 1 1 calc(50% - 10px); /* Two buttons per row */
+            }
+            .button-group .btn:last-child { /* Adjust for odd number of buttons like "Other" */
+                flex: 1 1 100%; /* Or adjust specific min-width */
+            }
+            .result-card h3 {
+                flex-direction: column;
+                text-align: center;
+            }
+            .result-card h3 .icon {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Stroke Risk Assessment</h1>
-        <p class="description">Enter your details to predict your stroke risk percentage.</p>
+        <h1>Stroke Risk Prediction</h1>
 
-        <form id="predictionForm">
+        <form id="predictionForm" class="form-section">
+
             <div class="form-group">
-                <label for="gender">Gender:</label>
-                <select id="gender" name="gender" required>
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <!-- Note: 'Other' gender was dropped in your model prep, so don't include it here -->
-                </select>
+                <label>Gender:</label>
+                <div class="button-group" data-name="gender">
+                    <button type="button" class="btn" data-value="Male">Male</button>
+                    <button type="button" class="btn" data-value="Female">Female</button>
+                    <!-- Per model, 'Other' was dropped. If you expect it, handle in app.py logic -->
+                    <!-- <button type="button" class="btn" data-value="Other">Other</button> -->
+                </div>
+                <input type="hidden" name="gender" required>
             </div>
 
-            <div class="form-group">
-                <label for="age">Age:</label>
-                <input type="number" id="age" name="age" min="0" max="120" step="0.1" required>
+            <div class="form-group age-slider-group">
+                <label for="age">Age: <span id="age-display">60</span></label>
+                <div class="age-slider-container">
+                    <input type="range" id="age" name="age" min="0" max="100" value="60" step="1">
+                    <span class="age-value" id="age-value-display">60</span>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>Hypertension:</label>
-                <input type="radio" id="hypertension_yes" name="hypertension" value="1" required>
-                <label for="hypertension_yes">Yes</label>
-                <input type="radio" id="hypertension_no" name="hypertension" value="0" required>
-                <label for="hypertension_no">No</label>
+                <div class="button-group" data-name="hypertension">
+                    <button type="button" class="btn" data-value="1">Yes</button>
+                    <button type="button" class="btn" data-value="0">No</button>
+                </div>
+                <input type="hidden" name="hypertension" required>
             </div>
 
             <div class="form-group">
                 <label>Heart Disease:</label>
-                <input type="radio" id="heart_disease_yes" name="heart_disease" value="1" required>
-                <label for="heart_disease_yes">Yes</label>
-                <input type="radio" id="heart_disease_no" name="heart_disease" value="0" required>
-                <label for="heart_disease_no">No</label>
+                <div class="button-group" data-name="heart_disease">
+                    <button type="button" class="btn" data-value="1">Yes</button>
+                    <button type="button" class="btn" data-value="0">No</button>
+                </div>
+                <input type="hidden" name="heart_disease" required>
             </div>
 
             <div class="form-group">
                 <label>Ever Married:</label>
-                <input type="radio" id="married_yes" name="ever_married" value="Yes" required>
-                <label for="married_yes">Yes</label>
-                <input type="radio" id="married_no" name="ever_married" value="No" required>
-                <label for="married_no">No</label>
+                <div class="button-group" data-name="ever_married">
+                    <button type="button" class="btn" data-value="Yes">Yes</button>
+                    <button type="button" class="btn" data-value="No">No</button>
+                </div>
+                <input type="hidden" name="ever_married" required>
+            </div>
+
+            <div class="form-group">
+                <label>Residence Type:</label>
+                <div class="button-group" data-name="Residence_type">
+                    <button type="button" class="btn" data-value="Urban">Urban</button>
+                    <button type="button" class="btn" data-value="Rural">Rural</button>
+                </div>
+                <input type="hidden" name="Residence_type" required>
             </div>
 
             <div class="form-group">
                 <label for="work_type">Work Type:</label>
                 <select id="work_type" name="work_type" required>
-                    <option value="">Select Work Type</option>
+                    <option value="">--Please Select--</option>
                     <option value="Private">Private</option>
                     <option value="Self-employed">Self-employed</option>
                     <option value="Govt_job">Govt Job</option>
@@ -286,28 +463,9 @@
             </div>
 
             <div class="form-group">
-                <label>Residence Type:</label>
-                <input type="radio" id="residence_urban" name="Residence_type" value="Urban" required>
-                <label for="residence_urban">Urban</label>
-                <input type="radio" id="residence_rural" name="Residence_type" value="Rural" required>
-                <label for="residence_rural">Rural</label>
-            </div>
-
-            <div class="form-group">
-                <label for="avg_glucose_level">Avg. Glucose Level:</label>
-                <input type="number" id="avg_glucose_level" name="avg_glucose_level" min="50" step="0.1" required>
-            </div>
-
-            <div class="form-group">
-                <label for="bmi">BMI (Body Mass Index):</label>
-                <input type="number" id="bmi" name="bmi" min="10" max="60" step="0.1" placeholder="Optional">
-                <small>Leave blank if unknown; will be imputed.</small>
-            </div>
-
-            <div class="form-group">
                 <label for="smoking_status">Smoking Status:</label>
                 <select id="smoking_status" name="smoking_status" required>
-                    <option value="">Select Status</option>
+                    <option value="">--Please Select--</option>
                     <option value="formerly smoked">Formerly Smoked</option>
                     <option value="never smoked">Never Smoked</option>
                     <option value="smokes">Smokes</option>
@@ -315,53 +473,120 @@
                 </select>
             </div>
 
-            <button type="submit">Get Risk Assessment</button>
+            <div class="form-group">
+                <label for="avg_glucose_level">Average Glucose Level:</label>
+                <input type="number" id="avg_glucose_level" name="avg_glucose_level" min="50" step="0.1" placeholder="e.g., 90.5" required>
+                <span class="input-description">Typically between 60 and 200 mg/dL</span>
+            </div>
+
+            <div class="form-group">
+                <label for="bmi">BMI (Body Mass Index):</label>
+                <input type="number" id="bmi" name="bmi" min="10" max="60" step="0.1" placeholder="Optional (e.g., 25.2)">
+                <span class="input-description">Healthy BMI is typically 18.5 - 24.9</span>
+            </div>
+
+            <button type="submit">Predict Stroke Risk</button>
         </form>
 
-        <div id="result-container" class="result-box">
+        <div id="result-container">
             <!-- Results will be displayed here -->
             <p>Your stroke risk assessment will appear here after submission.</p>
         </div>
     </div>
 
     <script>
-        /* JavaScript starts here */
-        document.getElementById('predictionForm').addEventListener('submit', async function(event) {
-            event.preventDefault(); // Prevent default form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Age Slider Logic ---
+            const ageSlider = document.getElementById('age');
+            const ageDisplay = document.getElementById('age-display');
+            const ageValueDisplay = document.getElementById('age-value-display');
 
-            const form = event.target;
-            const formData = new FormData(form);
+            ageSlider.addEventListener('input', function() {
+                ageDisplay.textContent = this.value;
+                ageValueDisplay.textContent = this.value;
+            });
 
-            // Display loading message
-            const resultContainer = document.getElementById('result-container');
-            resultContainer.innerHTML = '<p>Analyzing data... Please wait...</p>';
-            resultContainer.classList.add('loading'); // Add loading style
+            // --- Button Group Logic (for Gender, Hypertension, etc.) ---
+            document.querySelectorAll('.button-group').forEach(group => {
+                const hiddenInput = document.querySelector(`input[name="${group.dataset.name}"]`);
+                const buttons = group.querySelectorAll('.btn');
 
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    body: formData
+                buttons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        // Deselect all buttons in this group
+                        buttons.forEach(btn => btn.classList.remove('selected'));
+                        // Select the clicked button
+                        this.classList.add('selected');
+                        // Set the value of the hidden input
+                        hiddenInput.value = this.dataset.value;
+                    });
                 });
 
-                const data = await response.json();
+                // Optional: Pre-select a default if no initial value is set for required fields
+                // For this form, all are required, so make sure user selects one.
+                // If you want a default:
+                // if (!hiddenInput.value && buttons.length > 0) {
+                //     buttons[0].click(); // Simulates click on first button to set default
+                // }
+            });
 
-                if (data.success) {
-                    resultContainer.innerHTML = data.result_html;
-                    resultContainer.classList.remove('loading');
-                    resultContainer.classList.add('success'); // Add success style
-                } else {
-                    resultContainer.innerHTML = `<p class="error-message">Error: ${data.error}</p>`;
-                    resultContainer.classList.remove('loading', 'success');
-                    resultContainer.classList.add('error'); // Add error style
+            // --- Form Submission Logic ---
+            document.getElementById('predictionForm').addEventListener('submit', async function(event) {
+                event.preventDefault(); // Prevent default form submission
+
+                const form = event.target;
+                const formData = new FormData(form);
+
+                // Basic validation for required button groups
+                let allRequiredSelected = true;
+                document.querySelectorAll('.button-group').forEach(group => {
+                    const hiddenInput = document.querySelector(`input[name="${group.dataset.name}"]`);
+                    if (!hiddenInput.value) {
+                        allRequiredSelected = false;
+                        // Optionally add a visual cue for missing selection
+                        group.style.border = '2px solid red';
+                        group.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        alert(`Please select an option for ${group.dataset.name.replace('_', ' ').replace('Type', '')}.`);
+                    } else {
+                        group.style.border = 'none'; // Remove red border if fixed
+                    }
+                });
+
+                if (!allRequiredSelected) {
+                    return; // Stop submission if not all required button groups are selected
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                resultContainer.innerHTML = '<p class="error-message">An error occurred while connecting to the server.</p>';
-                resultContainer.classList.remove('loading', 'success');
-                resultContainer.classList.add('error'); // Add error style
-            }
+
+                // Display loading message
+                const resultContainer = document.getElementById('result-container');
+                resultContainer.innerHTML = '<p class="loading-message">Analyzing data... Please wait...</p>';
+                resultContainer.classList.remove('error', 'success'); // Clean previous states
+                resultContainer.classList.add('loading'); // Add loading style
+
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        resultContainer.innerHTML = data.result_html;
+                        resultContainer.classList.remove('loading');
+                        resultContainer.classList.add('success');
+                    } else {
+                        resultContainer.innerHTML = `<p class="error-message">Error: ${data.error}</p>`;
+                        resultContainer.classList.remove('loading', 'success');
+                        resultContainer.classList.add('error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    resultContainer.innerHTML = '<p class="error-message">An error occurred while connecting to the server. Please check your internet connection or try again later.</p>';
+                    resultContainer.classList.remove('loading', 'success');
+                    resultContainer.classList.add('error');
+                }
+            });
         });
-        /* JavaScript ends here */
     </script>
 </body>
 </html>
