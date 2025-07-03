@@ -7,7 +7,7 @@ app = Flask(__name__)
 # --- Load your pre-trained model and preprocessors ---
 try:
     # Load the specific model saved from your training script
-    model = joblib.load('xgb_tuned_model_optimized_f1.pkl')
+    model = joblib.load('Stroke_model.pkl')
     # Load the fitted StandardScaler
     scaler = joblib.load('scaler.pkl')
     # Load the dictionary of fitted LabelEncoders
