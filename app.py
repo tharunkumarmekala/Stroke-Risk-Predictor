@@ -1,188 +1,256 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
+from flask import Flask, render_template, request, jsonify
 import joblib
 import pandas as pd
 import numpy as np
-import os
-import xgboost as xgb
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
-CORS(app)
+app = Flask(__name__)
 
-# Define model paths relative to the current script's directory
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATHS = {
-    'xgboost_json': os.path.join(BASE_DIR, 'models', 'strokemodel.json'),
-    'xgboost_pkl': os.path.join(BASE_DIR, 'models', 'xgboost_model.pkl'),
-    'ensemble': os.path.join(BASE_DIR, 'models', 'ensemble_model.pkl'),
-    'scaler': os.path.join(BASE_DIR, 'models', 'scaler.pkl') # Assuming you might still use a scaler
-}
+# --- Load the Model and Preprocessing Objects ---
+try:
+    model = joblib.load('Stroke_model.pkl')
+    scaler = joblib.load('scaler.pkl')
+    label_encoders = joblib.load('label_encoders.pkl')
+    train_bmi_mean = joblib.load('train_bmi_mean.pkl')
+    print("Model and preprocessing objects loaded successfully!")
+except Exception as e:
+    print(f"Error loading model or preprocessing objects: {e}")
+    # Handle error, maybe exit or set app to a 'maintenance mode'
+    model = None
+    scaler = None
+    label_encoders = None
+    train_bmi_mean = None
 
-# Global variables for model and scaler
-model = None
-model_type = None
-scaler = None
-
-# Columns in the exact order your model expects AFTER mapping/encoding
-# THIS IS CRITICAL. MUST MATCH YOUR MODEL'S TRAINING DATA.
-MODEL_FEATURE_COLUMNS = [
-    'Age', 'Sex', 'BMI', 'Cholesterol', 'Hypertension',
-    'Atrial_Fibrillation', 'Diabetes', 'Smoking', 'Previous_Stroke'
+# Define the order of features the model expects (IMPORTANT!)
+# This should match the order of columns in X during model training
+# You can get this from X.columns after the initial data loading and ID drop.
+# Example (adjust based on your actual X.columns):
+# X = df.drop('stroke', axis=1)
+FEATURE_ORDER = [
+    'gender', 'age', 'hypertension', 'heart_disease', 'ever_married',
+    'work_type', 'Residence_type', 'avg_glucose_level', 'bmi', 'smoking_status'
 ]
 
-# Load models and scaler on application startup
-@app.before_first_request
-def load_resources():
-    global model, model_type, scaler
+# --- Helper Function to Generate Result Content ---
+def generate_result_content(stroke_percent, user_data):
+    """
+    Generates the rich HTML content for the stroke risk assessment.
+    """
+    risk_level = ""
+    risk_icon = ""
+    recommendations = {
+        "contributors": [],
+        "clinical_actions": [],
+        "lifestyle_recommendations": [],
+        "recommended_foods": {
+            "Male": [
+                "Boiled vegetables 🥕", "Steamed fish 🐟", "Green tea 🍵",
+                "Whole wheat 🥖", "Berries 🍓", "Oats 🥣", "Cucumber 🥒", "Celery 🥬"
+            ],
+            "Female": [
+                "Leafy greens 🥬", "Salmon 🍣 (rich in Omega-3)", "Nuts & Seeds 🌰",
+                "Citrus fruits 🍊", "Beans & Lentils 🍲", "Yogurt 🥛 (low-fat)",
+                "Dark chocolate 🍫 (in moderation)", "Avocado 🥑"
+            ]
+        }
+    }
+
+    # Determine Risk Level and Icon
+    if stroke_percent < 10:
+        risk_level = "Very Low Risk"
+        risk_icon = "🟢"
+        recommendations["clinical_actions"].append("Continue healthy lifestyle. Regular check-ups recommended.")
+        recommendations["lifestyle_recommendations"].append("Maintain balanced diet and regular exercise.")
+    elif 10 <= stroke_percent < 30:
+        risk_level = "Low Risk"
+        risk_icon = "🔵"
+        recommendations["clinical_actions"].append("Routine medical check-up within 6-12 months.")
+        recommendations["lifestyle_recommendations"].append("Focus on a balanced diet and consistent physical activity.")
+    elif 30 <= stroke_percent < 50:
+        risk_level = "Moderate Risk"
+        risk_icon = "🟡"
+        recommendations["clinical_actions"].append("Consult your primary care physician for a comprehensive health assessment.")
+        recommendations["lifestyle_recommendations"].append("Adopt healthier eating habits and increase physical activity.")
+        recommendations["lifestyle_recommendations"].append("Monitor blood pressure and cholesterol levels regularly.")
+    elif 50 <= stroke_percent < 70:
+        risk_level = "High Risk"
+        risk_icon = "🟠 🟠"
+        recommendations["clinical_actions"].append("Urgent medical consultation - Schedule with a doctor immediately.")
+        recommendations["clinical_actions"].append("Consider blood pressure and cholesterol management strategies.")
+        recommendations["lifestyle_recommendations"].append("Implement significant lifestyle changes: quit smoking, dietary improvements, consistent exercise.")
+        recommendations["lifestyle_recommendations"].append("Stress management techniques (e.g., meditation, yoga) can be beneficial.")
+    else: # stroke_percent >= 70
+        risk_level = "Very High Risk"
+        risk_icon = "🔴 🔴"
+        recommendations["clinical_actions"].append("🚨 High risk detected! Immediate medical consultation strongly recommended. Discuss preventative medication if appropriate.")
+        recommendations["clinical_actions"].append("Regular monitoring of vital signs (BP, glucose) is critical.")
+        recommendations["clinical_actions"].append("Consider specialist referral (e.g., cardiologist, neurologist).")
+        recommendations["lifestyle_recommendations"].append("Aggressive lifestyle changes: strict adherence to dietary guidelines, physician-approved exercise program.")
+        recommendations["lifestyle_recommendations"].append("Comprehensive stress reduction plan.")
+
+    # Main Risk Contributors
+    if user_data['age'] >= 60:
+        recommendations["contributors"].append(f"Age {user_data['age']} - Risk significantly increases with age.")
+    elif user_data['age'] >= 40:
+        recommendations["contributors"].append(f"Age {user_data['age']} - Risk increases with age.")
+    if user_data['hypertension'] == 1:
+        recommendations["contributors"].append("Hypertension - High blood pressure is a major risk factor.")
+    if user_data['heart_disease'] == 1:
+        recommendations["contributors"].append("Heart Disease - Pre-existing heart conditions elevate risk.")
+    if user_data['smoking_status_original'] == 'smokes':
+        recommendations["contributors"].append("Active Smoker - Smoking severely damages blood vessels and increases clot risk.")
+    elif user_data['smoking_status_original'] == 'formerly smoked':
+        recommendations["contributors"].append("Formerly Smoked - Past smoking history still contributes to risk.")
+
+    if user_data['bmi'] < 18.5:
+        recommendations["contributors"].append("Underweight (BMI <18.5) - May indicate poor nutrition or underlying health issues.")
+    elif user_data['bmi'] >= 25 and user_data['bmi'] < 30:
+        recommendations["contributors"].append("Overweight (BMI 25-29.9) - Increases strain on the cardiovascular system.")
+    elif user_data['bmi'] >= 30:
+        recommendations["contributors"].append("Obese (BMI >30) - Significantly elevates risk for stroke and related conditions.")
+
+    if not recommendations["contributors"]: # If no specific contributors found, add a general one
+        recommendations["contributors"].append("Based on your inputs, no major individual risk factors are identified, but general health maintenance is always advised.")
+
+    # Add general lifestyle recommendations if not enough specific ones
+    if not recommendations["lifestyle_recommendations"]:
+        recommendations["lifestyle_recommendations"].append("Maintain a healthy weight.")
+        recommendations["lifestyle_recommendations"].append("Regular physical activity (aim for 30 minutes most days).")
+        recommendations["lifestyle_recommendations"].append("Eat a balanced diet rich in fruits, vegetables, and whole grains.")
+        recommendations["lifestyle_recommendations"].append("Limit saturated and trans fats, cholesterol, and sodium.")
+
+    # Construct HTML output
+    html_output = f"""
+    <h2>Stroke Risk Assessment</h2>
+    <p class="stroke-percent">{stroke_percent:.1f}%</p>
+    <p class="risk-level">{risk_icon} {risk_level}</p>
+    <p class="call-to-action">
+        {recommendations['clinical_actions'][0] if recommendations['clinical_actions'] else 'Maintain a healthy lifestyle.'}
+    </p>
+
+    <h3>🔍 Main Risk Contributors:</h3>
+    <ul>
+        {''.join([f'<li>🔸 {c}</li>' for c in recommendations['contributors']])}
+    </ul>
+
+    <h3>🏥 Clinical Actions:</h3>
+    <ul>
+        {''.join([f'<li>🩺 {c}</li>' for c in recommendations['clinical_actions']])}
+    </ul>
+
+    <h3>🌿 Lifestyle Recommendations:</h3>
+    <ul>
+        {''.join([f'<li>🏋️ {c}</li>' for c in recommendations['lifestyle_recommendations']])}
+    </ul>
+    """
     
-    # Try loading XGBoost from JSON first
-    try:
-        temp_model = xgb.Booster()
-        temp_model.load_model(MODEL_PATHS['xgboost_json'])
-        model = temp_model
-        model_type = 'xgboost_json'
-        print(f"Loaded XGBoost model from JSON: {MODEL_PATHS['xgboost_json']}")
-    except Exception as e_json:
-        print(f"Could not load XGBoost from JSON: {e_json}")
-        try:
-            # Fall back to pickle version
-            temp_model = joblib.load(MODEL_PATHS['xgboost_pkl'])
-            model = temp_model
-            model_type = 'xgboost_pkl'
-            print(f"Loaded XGBoost model from pickle: {MODEL_PATHS['xg xgboost_model.pkl']}")
-        except Exception as e_pkl:
-            print(f"Could not load XGBoost from pickle: {e_pkl}")
-            try:
-                # Final fallback to ensemble
-                temp_model = joblib.load(MODEL_PATHS['ensemble'])
-                model = temp_model
-                model_type = 'ensemble'
-                print(f"Loaded ensemble model: {MODEL_PATHS['ensemble']}")
-            except Exception as e_ensemble:
-                print(f"Could not load any model: {e_ensemble}")
-                model = None # If no model loads, set model to None
+    user_gender = user_data['gender_original']
+    if user_gender in recommendations['recommended_foods']:
+        html_output += f"""
+        <h3>🍎 Recommended Foods for Your Gender ({user_gender}):</h3>
+        <ul>
+            {''.join([f'<li>{food}</li>' for food in recommendations['recommended_foods'][user_gender]])}
+        </ul>
+        """
+    else:
+        html_output += """
+        <h3>🍎 Recommended Foods:</h3>
+        <p>A balanced diet rich in fruits, vegetables, and whole grains is recommended for everyone.</p>
+        <ul>
+            <li>Berries 🍓</li>
+            <li>Oats 🥣</li>
+            <li>Leafy greens 🥬</li>
+            <li>Fish 🐟</li>
+            <li>Nuts & Seeds 🌰</li>
+        </ul>
+        """
 
-    # Load scaler if exists
-    try:
-        scaler = joblib.load(MODEL_PATHS['scaler'])
-        print(f"Loaded scaler from: {MODEL_PATHS['scaler']}")
-    except FileNotFoundError:
-        print(f"No scaler found at {MODEL_PATHS['scaler']}")
-        scaler = None
-    except Exception as e_scaler:
-        print(f"Error loading scaler: {e_scaler}")
-        scaler = None
+    return html_output
 
-    if model is None:
-        print("CRITICAL ERROR: No prediction model could be loaded.")
-    
-# Helper functions to map form values to model expected values
-# These mappings MUST exactly match how your model was trained
-def _map_age(age_value):
-    # 'age' from HTML is 30, 50, 65. Directly use these as numerical values.
-    return float(age_value)
 
-def _map_bmi(bmi_value):
-    # 'bmi' from HTML is 18, 22, 27, 32. Directly use these as numerical values.
-    return float(bmi_value)
-
-def _map_cholesterol(chol_value):
-    # 'cholesterol' from HTML is 170, 220, 250. Directly use these as numerical values.
-    return float(chol_value)
-
-# Main route to serve the HTML file
+# --- Flask Routes ---
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# Prediction endpoint
 @app.route('/predict', methods=['POST'])
 def predict():
-    global model, model_type, scaler # Access global variables
-
-    if model is None:
-        return jsonify({
-            'error': 'Model Not Loaded',
-            'message': 'The prediction model could not be loaded on the server. Please check server logs.'
-        }), 500
+    if model is None or scaler is None or label_encoders is None or train_bmi_mean is None:
+        return jsonify({"error": "Model not loaded. Server is not ready."}), 500
 
     try:
-        # Get data from POST request (now using JSON as per the HTML's fetch request)
-        data = request.get_json()
-        print("Received JSON data:", data)
+        data = request.form.to_dict()
 
-        # Map the form data to match your model's expected input format
-        # Ensure 'sex' mapping (male=1, female=0) matches your training
-        input_data_mapped = {
-            'Age': _map_age(data['age']),
-            'Sex': 1 if data['sex'] == 'male' else 0,
-            'BMI': _map_bmi(data['bmi']),
-            'Cholesterol': _map_cholesterol(data['cholesterol']),
-            'Hypertension': float(data['hypertension']), # Ensure float for scaling consistency
-            'Atrial_Fibrillation': float(data['atrial_fibrillation']), # Ensure float
-            'Diabetes': float(data['diabetes']), # Ensure float
-            'Smoking': float(data['smoking']), # Ensure float
-            'Previous_Stroke': float(data['previous_stroke']) # Ensure float
+        # Store original values for result generation
+        user_data = {
+            'gender_original': data['gender'],
+            'age': float(data['age']),
+            'hypertension': int(data['hypertension']),
+            'heart_disease': int(data['heart_disease']),
+            'ever_married': data['ever_married'],
+            'work_type': data['work_type'],
+            'Residence_type': data['Residence_type'],
+            'avg_glucose_level': float(data['avg_glucose_level']),
+            'bmi': float(data['bmi']) if data['bmi'] else None, # Handle empty BMI
+            'smoking_status_original': data['smoking_status']
         }
-        
-        # Create DataFrame ensuring correct column order
-        df = pd.DataFrame([input_data_mapped], columns=MODEL_FEATURE_COLUMNS)
-        print("DataFrame before scaling:\n", df)
-        
-        # Scale features if scaler exists
-        if scaler is not None:
-            df_scaled_array = scaler.transform(df)
-            df = pd.DataFrame(df_scaled_array, columns=df.columns) # Convert back to DataFrame
-            print("DataFrame after scaling:\n", df)
-        
-        # Make prediction
-        prediction_proba = 0.0 # Default if no model or issue
-        if model_type == 'xgboost_json':
-            dmatrix = xgb.DMatrix(df)
-            prediction_proba = model.predict(dmatrix)[0] # XGBoost Booster.predict returns probabilities directly
-        else: # For sklearn-style models (like xgboost_model.pkl or ensemble_model.pkl if they're sklearn-API)
-            if hasattr(model, 'predict_proba'):
-                prediction_proba = model.predict_proba(df)[0][1] # Probability of stroke (class 1)
-            else:
-                # Fallback if model only has predict (returns class, not prob) - less ideal for risk assessment
-                prediction_proba = model.predict(df)[0]
-                prediction_proba = float(prediction_proba) # Convert class (0 or 1) to float
 
-        # Convert to percentage (0-100%) with clipping
-        risk_percentage = min(100.0, max(0.0, float(prediction_proba) * 100))
+        # Preprocessing steps
+        # 1. Handle 'Other' gender if it somehow sneaks in (though HTML should prevent it)
+        # Your original code drops 'Other'. For inference, we can map it or handle as error.
+        # For this setup, we'll assume the form restricts to 'Male'/'Female'.
+        processed_gender = data['gender']
+        if processed_gender == 'Other':
+            # Option 1: Map 'Other' to a default like 'Male' or 'Female' or the most frequent
+            # For simplicity, let's assume 'Male' if 'Other' is somehow passed
+            processed_gender = 'Male' # Or raise error if strict validation needed
+            print("Warning: 'Other' gender received, mapping to 'Male'.")
         
-        # Return only the risk percentage, as all other detailed logic is in frontend JS
-        return jsonify({
-            'risk_percentage': risk_percentage,
-            'status': 'success'
-        })
+        # 2. Impute BMI if missing
+        if user_data['bmi'] is None:
+            user_data['bmi'] = train_bmi_mean
+            print(f"BMI was missing, imputed with training mean: {train_bmi_mean:.2f}")
+
+        # 3. Label Encoding for categorical features
+        processed_input = {}
+        for col, le in label_encoders.items():
+            if col == 'gender':
+                processed_input[col] = le.transform([processed_gender])[0]
+            elif col == 'ever_married':
+                processed_input[col] = le.transform([user_data['ever_married']])[0]
+            elif col == 'work_type':
+                processed_input[col] = le.transform([user_data['work_type']])[0]
+            elif col == 'Residence_type':
+                processed_input[col] = le.transform([user_data['Residence_type']])[0]
+            elif col == 'smoking_status':
+                processed_input[col] = le.transform([user_data['smoking_status_original']])[0]
         
-    except (ValueError, TypeError, KeyError) as e:
-        print(f"Input validation error: {e}")
-        return jsonify({
-            'error': 'Invalid Input Data',
-            'message': f"There was an issue processing your input. Please check all fields. Details: {str(e)}"
-        }), 400
+        # Add numerical features
+        processed_input['age'] = user_data['age']
+        processed_input['hypertension'] = user_data['hypertension']
+        processed_input['heart_disease'] = user_data['heart_disease']
+        processed_input['avg_glucose_level'] = user_data['avg_glucose_level']
+        processed_input['bmi'] = user_data['bmi']
+
+        # Create DataFrame from processed input
+        # Ensure column order matches the training data
+        input_df = pd.DataFrame([processed_input])[FEATURE_ORDER]
+
+        # 4. Scale numerical features
+        scaled_input = scaler.transform(input_df)
+        
+        # 5. Make prediction
+        prediction_proba = model.predict_proba(scaled_input)[0][1] # Probability of stroke (class 1)
+        stroke_percent = prediction_proba * 100
+
+        # Generate the rich result content
+        result_html = generate_result_content(stroke_percent, user_data)
+
+        return jsonify({"success": True, "result_html": result_html})
+
+    except ValueError as ve:
+        return jsonify({"error": f"Invalid input: {ve}. Please check your numerical values."}), 400
     except Exception as e:
-        print(f"Unexpected error during prediction: {e}")
-        return jsonify({
-            'error': 'Prediction Failed',
-            'message': f"An unexpected server error occurred: {str(e)}. Please try again later."
-        }), 500
+        return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
 
-# This block is for local development only
 if __name__ == '__main__':
-    # Ensure 'models' directory exists for local testing
-    if not os.path.exists(os.path.join(BASE_DIR, 'models')):
-        print(f"Creating 'models' directory at {os.path.join(BASE_DIR, 'models')}")
-        os.makedirs(os.path.join(BASE_DIR, 'models'))
-    
-    # Load resources for local run
-    load_resources() 
-    
-    # Check if a model was loaded
-    if model is None:
-        print("Application cannot start locally because no model was loaded. Please ensure model files are present.")
-        exit(1) # Exit with an error code
-
-    app.run(debug=True)
+    app.run(debug=True) # Set debug=False in production
