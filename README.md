@@ -1,0 +1,131 @@
+# Stroke Risk Predictor
+
+## Overview
+
+The **Stroke Risk Predictor** is a real-time, web-based application that uses machine learning to predict the likelihood of a stroke. The tool leverages **XGBoost**, a powerful gradient boosting algorithm, and **SHAP** (SHapley Additive exPlanations) for model explainability. The system is deployed using the **Flask** web framework, providing an intuitive user interface to input clinical data and receive personalized stroke risk predictions.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Installation Instructions](#installation-instructions)
+- [Usage](#usage)
+- [Performance Metrics](#performance-metrics)
+- [Technologies Used](#technologies-used)
+- [Contributing](#contributing)
+- [License](#license)
+- [Screenshots](#screenshots)
+
+---
+
+## Features
+
+- **Real-time Stroke Risk Prediction**: Users can input clinical data (age, BMI, blood pressure, etc.) and get real-time stroke risk predictions.
+- **Personalized Health Recommendations**: The system provides tailored lifestyle recommendations based on the user's risk category (low, medium, high).
+- **Model Explainability**: SHAP values are used to explain the influence of various features on the prediction, enhancing transparency.
+- **Flask-based Web Application**: Easy-to-use web interface for both clinicians and patients to interact with the model.
+
+---
+
+## Installation Instructions
+
+### 1. Clone the repository:
+
+```bash
+git clone https://github.com/tharunkumarmekala/StrokeRiskPredictor.git
+cd StrokeRiskPredictor
+```
+
+### 2. Create a virtual environment (optional but recommended):
+
+```bash
+python3 -m venv venv
+source venv/bin/activate   # For Linux/Mac
+venv\Scripts\activate      # For Windows
+```
+
+### 3. Install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Usage
+
+### Run the Flask application:
+
+```bash
+python app.py
+```
+
+### Access the web app:
+Once the application is running, open a web browser and go to:
+http://127.0.0.1:5000
+
+### Input clinical data:
+Enter the patient's details such as age, BMI, blood pressure, etc. and submit the form.
+
+### View the prediction:
+The system will display a stroke risk percentage along with the risk category (low, medium, high).
+
+### Personalized recommendations:
+Based on the risk level, the system will suggest lifestyle changes (e.g., improved diet, exercise, etc.).
+
+## Performance Metrics
+
+The model was trained and evaluated on a public dataset of stroke risk factors, achieving the following metrics:
+
+**Precision**: 0.903
+
+**Recall**: 0.930
+
+**F1 Score**: 0.916
+
+**AUC (Area Under the Curve)**: 0.979
+
+These metrics demonstrate strong performance in predicting stroke risk while maintaining a high recall rate to minimize false negatives.
+
+## Technologies Used
+
+**Flask**: Web framework for real-time application deployment.
+
+**XGBoost**: Gradient boosting model used for prediction.
+
+**SHAP**: Model interpretability using SHapley values.
+
+**HTML/CSS**: For the web interface.
+
+**JavaScript**: For interactivity and real-time updates.
+
+## Contributing
+
+We welcome contributions to improve the project. If you would like to contribute, please fork the repository, make your changes, and submit a pull request.
+
+### Steps to Contribute:
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature-branch`)
+3. Make changes and commit them (`git commit -am 'Add new feature'`)
+4. Push the changes to your forked repo (`git push origin feature-branch`)
+5. Open a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Screenshots
+
+Two key screenshots demonstrating the system workflow are included in the screenshots/ folder:
+
+**Input Form**: The form where users input clinical variables, such as age, BMI, blood pressure, etc.
+
+**Predicted Stroke Risk**: The display showing the stroke risk prediction along with personalized health recommendations.
+
+These images illustrate the smooth and practical user experience from data entry to results visualization.
+
+Input Form:
+
+Predicted Stroke Risk:
+
+
