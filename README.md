@@ -12,7 +12,6 @@ The **Stroke Risk Predictor** is a real-time, web-based application that uses ma
 - [Features](#features)
 - [Installation Instructions](#installation-instructions)
 - [Usage](#usage)
-- [Performance Metrics](#performance-metrics)
 - [Technologies Used](#technologies-used)
 - [Contributing](#contributing)
 - [License](#license)
@@ -72,20 +71,6 @@ The system will display a stroke risk percentage along with the risk category (l
 
 ### Personalized recommendations:
 Based on the risk level, the system will suggest lifestyle changes (e.g., improved diet, exercise, etc.).
-
-## Performance Metrics
-
-The model was trained and evaluated on a public dataset of stroke risk factors, achieving the following metrics:
-
-**Precision**: 0.903
-
-**Recall**: 0.930
-
-**F1 Score**: 0.916
-
-**AUC (Area Under the Curve)**: 0.979
-
-These metrics demonstrate strong performance in predicting stroke risk while maintaining a high recall rate to minimize false negatives.
 
 ## Technologies Used
 
