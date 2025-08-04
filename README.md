@@ -15,7 +15,6 @@ The **Stroke Risk Predictor** is a real-time, web-based application that uses ma
 - [Technologies Used](#technologies-used)
 - [Contributing](#contributing)
 - [License](#license)
-- [Screenshots](#screenshots)
 
 ---
 
@@ -99,18 +98,5 @@ We welcome contributions to improve the project. If you would like to contribute
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Screenshots
-
-Two key screenshots demonstrating the system workflow are included in the screenshots/ folder:
-
-**Input Form**: The form where users input clinical variables, such as age, BMI, blood pressure, etc.
-
-**Predicted Stroke Risk**: The display showing the stroke risk prediction along with personalized health recommendations.
-
-These images illustrate the smooth and practical user experience from data entry to results visualization.
-
-Input Form:
-
-Predicted Stroke Risk:
 
 
